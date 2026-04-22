@@ -27,7 +27,6 @@ document.addEventListener('DOMContentLoaded', () => {
         const element = node.getElement();
         if (!element) return;
         
-        // Исправленный заголовок без двойного const и без &nbsp;
         const title = document.createElement('h3');
         const tempDiv = document.createElement('div');
         tempDiv.innerHTML = node.getPresentableString();
@@ -171,55 +170,55 @@ document.addEventListener('DOMContentLoaded', () => {
         const selectedTask = e.target.value;
         console.log("Загружаем логику для:", selectedTask);
 
-        // Базовый редактор (возвращаем интерфейс дерева)
+        // Базовый редактор
         if (selectedTask === 'base') {
             document.getElementById('btn-add-function').style.display = 'inline-block';
             document.getElementById('btn-add-set').style.display = 'inline-block';
-            treeRootElement.parentElement.style.display = 'block'; // Показываем панель дерева
+            treeRootElement.parentElement.style.display = 'block'; 
             renderTree();
             renderPropertiesPanel(selectedNode);
             return;
         }
 
-        // Прячем стандартные кнопки дерева
         document.getElementById('btn-add-function').style.display = 'none';
         document.getElementById('btn-add-set').style.display = 'none';
 
+        let modulePath = ''; 
+        
         try {
-            let modulePath = '';
             let className = '';
 
-            // Подключение CardGenerator на основе твоего файла
             if (selectedTask === 'cards') {
-                // ПРОВЕРЬ ЭТОТ ПУТЬ: он должен точно совпадать с папками в твоем проекте!
                 modulePath = './src/ru/spb/ipo/taskgenerator/generator/cards/CardGenerator.js';
                 className = 'CardGenerator';
             }
-            // Здесь будем добавлять word, chess и остальные...
 
             if (modulePath) {
-                // Динамически импортируем файл
                 const module = await import(modulePath);
-                const generatorInstance = new module[className](); // Создаем объект генератора
+                const generatorInstance = new module[className]();
                 
-                // Прячем старое дерево
                 treeRootElement.parentElement.style.display = 'none';
                 
-                // Выводим интерфейс генератора в правую панель
                 propertiesPanel.innerHTML = `
                     <h3>Генератор: ${generatorInstance.getHelpString ? generatorInstance.getHelpString() : className}</h3>
                     <p style="color: #4CAF50;">Класс успешно инициализирован!</p>
-                    <p>Здесь скоро появятся кнопки настройки карт (bubi, chervi и т.д.).</p>
                 `;
-                
-                // TODO: Если в BaseGeneratorUI есть метод для получения HTML (например, render() или getHtml()), вызовем его здесь
             } else {
                 propertiesPanel.innerHTML = `<h3>${selectedTask}</h3><p>Этот генератор еще не подключен в main.js.</p>`;
             }
 
         } catch (error) {
             console.error("Ошибка при загрузке генератора:", error);
-            propertiesPanel.innerHTML = `<h3 style="color: red;">Ошибка 404</h3><p>Не удалось найти файл по пути: <br><code>${modulePath}</code></p><p>Проверь пути в папке src!</p>`;
+            propertiesPanel.innerHTML = `
+                <h3 style="color: #ff5555;">Файл не найден (Ошибка 404)</h3>
+                <p>Не удалось загрузить модуль по пути:</p>
+                <code style="display:block; padding:10px; background:#1e1e1e; color:#ce9178; margin-bottom:15px;">${modulePath}</code>
+                <p><b>Что нужно проверить:</b></p>
+                <ol>
+                    <li style="margin-bottom: 5px;">Точное имя файла в VS Code. Может он называется <code>CardsGenerator.js</code> (с буквой s) или <code>cardGenerator.js</code> (с маленькой буквы)? На GitHub это важно!</li>
+                    <li style="margin-bottom: 5px;">Проверь первую строчку внутри самого файла <code>CardGenerator.js</code>. Если он импортирует <code>BaseGeneratorUI</code>, и путь к нему написан с ошибкой, файл тоже не загрузится.</li>
+                </ol>
+            `;
         }
     });
 
