@@ -11,39 +11,43 @@ document.addEventListener('DOMContentLoaded', () => {
     const app = new TaskGenerator();
     const treeRootElement = document.getElementById('task-tree');
     const xmlEditor = document.getElementById('xml-editor');
-    const propertiesPanel = document.getElementById('properties-panel'); // Наша правая панель
+    const propertiesPanel = document.getElementById('properties-panel');
     
     let selectedNode = app.modelTree.getRoot();
 
-    // Функция отрисовки панели свойств
+    // Отрисовка панели свойств
     function renderPropertiesPanel(node) {
-        propertiesPanel.innerHTML = ''; // Очищаем старые свойства
+        propertiesPanel.innerHTML = ''; 
 
-        // Корень пока не редактируем
         if (!node || node === app.modelTree.getRoot()) {
             propertiesPanel.innerHTML = '<p class="placeholder-text">Выберите элемент в дереве для редактирования</p>';
             return;
         }
 
         const element = node.getElement();
+        if (!element) return;
         
-        // Создаем заголовок
         const title = document.createElement('h3');
-        title.textContent = `Настройки элемента`;
+        // Очищаем название от HTML-тегов раскраски для красивого заголовка
+        title.textContent = `Настройки: ${node.getPresentableString().replace(/<[^>]+>/g, '')}`; 
         propertiesPanel.appendChild(title);
 
-        // Создаем поле ввода для типа (type)
         const label = document.createElement('label');
         label.textContent = 'Атрибут type:';
         label.style.display = 'block';
         label.style.marginTop = '15px';
-        label.style.fontSize = '14px';
         label.style.color = '#ccc';
 
         const input = document.createElement('input');
         input.type = 'text';
-        // Пытаемся достать текущий тип (адаптируй под методы твоего Element.js, если нужно)
-        input.value = element.getType ? element.getType() : 'Unknown';
+        
+        // Надежно достаем текущий тип элемента
+        let currentType = '';
+        if (element.getType) currentType = element.getType();
+        else if (element.type) currentType = element.type;
+        else if (element.attributes && element.attributes.type) currentType = element.attributes.type;
+
+        input.value = currentType;
         input.style.width = '100%';
         input.style.padding = '8px';
         input.style.marginTop = '8px';
@@ -51,53 +55,61 @@ document.addEventListener('DOMContentLoaded', () => {
         input.style.color = '#ce9178';
         input.style.border = '1px solid #333';
         input.style.borderRadius = '4px';
-        input.style.outline = 'none';
 
-        // Когда мы печатаем в поле, обновляем дерево и XML
+        // Обновляем данные при вводе текста
         input.oninput = (e) => {
             const newValue = e.target.value;
-            if (element.setType) {
-                element.setType(newValue);
-            } else if (element.setAttribute) {
-                element.setAttribute('type', newValue);
-            }
-            renderTree(); // Перерисовываем левое дерево
-            Actions.updateXml(); // Обновляем XML снизу
+            if (element.setType) element.setType(newValue);
+            else if (element.setAttribute) element.setAttribute('type', newValue);
+            else element.type = newValue;
+            
+            renderTree(); 
+            Actions.updateXml(); 
         };
 
         label.appendChild(input);
         propertiesPanel.appendChild(label);
     }
 
+    // Отрисовка дерева (Исправленная версия)
     function renderTree() {
         treeRootElement.innerHTML = ''; 
         const rootNode = app.modelTree.getRoot();
         
         function createNodeHtml(node, container) {
             const li = document.createElement('li');
-            li.className = 'tree-node';
-            li.innerHTML = node.getPresentableString ? node.getPresentableString() : "Элемент";
+            li.style.listStyle = 'none';
             
-            if (selectedNode === node) li.classList.add('selected');
+            // Делаем кликабельным только текст (span), а не весь список
+            const textSpan = document.createElement('div');
+            textSpan.innerHTML = node.getPresentableString ? node.getPresentableString() : "Элемент";
+            textSpan.style.padding = '4px 8px';
+            textSpan.style.cursor = 'pointer';
+            textSpan.style.borderRadius = '3px';
+            textSpan.style.display = 'inline-block';
+            
+            if (selectedNode === node) {
+                textSpan.style.backgroundColor = '#007acc';
+                textSpan.style.color = 'white';
+            }
 
-            li.onclick = (e) => {
-                e.stopPropagation();
+            textSpan.onclick = (e) => {
+                e.stopPropagation(); // Блокируем клик по родителю
                 selectedNode = node;
-                document.querySelectorAll('.tree-node').forEach(n => n.classList.remove('selected'));
-                li.classList.add('selected');
-                
-                // Вызываем отрисовку свойств при клике!
-                renderPropertiesPanel(node);
-
-                if (typeof Actions.elementSelected === 'function') {
-                    Actions.elementSelected(node);
-                }
+                renderTree(); 
+                renderPropertiesPanel(node); 
+                if (typeof Actions.elementSelected === 'function') Actions.elementSelected(node);
             };
 
+            li.appendChild(textSpan);
             container.appendChild(li);
 
+            // Рекурсия для детей
             if (node.getChildCount && node.getChildCount() > 0) {
                 const ul = document.createElement('ul');
+                ul.style.paddingLeft = '15px';
+                ul.style.borderLeft = '1px solid #444';
+                ul.style.marginLeft = '5px';
                 for (let i = 0; i < node.getChildCount(); i++) {
                     createNodeHtml(node.getChildAt(i), ul);
                 }
@@ -128,7 +140,10 @@ document.addEventListener('DOMContentLoaded', () => {
         parentElement.addChild(childElement); 
         const childNode = GraphicFactory.getView(childElement);
         targetNode.addChild(childNode); 
+        
+        selectedNode = childNode; // Авто-выбор нового элемента
         renderTree();
+        renderPropertiesPanel(selectedNode);
         Actions.updateXml();
     }
 
@@ -147,16 +162,13 @@ document.addEventListener('DOMContentLoaded', () => {
             if (parentNode.remove) parentNode.remove(selectedNode);
 
             selectedNode = parentNode;
-            
-            // Если удалили элемент, очищаем правую панель
-            renderPropertiesPanel(selectedNode);
-            
             renderTree();
+            renderPropertiesPanel(selectedNode);
             Actions.updateXml();
         }
     });
 
     renderTree();
     Actions.updateXml();
-    renderPropertiesPanel(selectedNode); // Первоначальный вызов
+    renderPropertiesPanel(selectedNode);
 });
