@@ -29,7 +29,14 @@ document.addEventListener('DOMContentLoaded', () => {
         
         const title = document.createElement('h3');
         // Очищаем название от HTML-тегов раскраски для красивого заголовка
-        title.textContent = `Настройки: ${node.getPresentableString().replace(/<[^>]+>/g, '').replace(/&nbsp;/g, ' ')}`;
+        const title = document.createElement('h3');
+        
+        // Создаем невидимый элемент, чтобы браузер сам "переварил" все HTML-теги и &nbsp;
+        const tempDiv = document.createElement('div');
+        tempDiv.innerHTML = node.getPresentableString();
+        title.textContent = `Настройки: ${tempDiv.textContent.trim()}`; // Берем только чистый текст
+        
+        propertiesPanel.appendChild(title);
         propertiesPanel.appendChild(title);
 
         const label = document.createElement('label');
@@ -172,10 +179,37 @@ document.addEventListener('DOMContentLoaded', () => {
     Actions.updateXml();
     renderPropertiesPanel(selectedNode);
     // Логика переключения между 8 задачами
-    document.getElementById('generator-select').addEventListener('change', (e) => {
+   // Логика переключения между 8 задачами
+    document.getElementById('generator-select').addEventListener('change', async (e) => {
         const selectedTask = e.target.value;
-        console.log("Выбрана задача:", selectedTask);
-        // Здесь мы будем подключать логику из папки src/generator/...
-        alert("В разработке: Переключение на модуль " + selectedTask);
+        console.log("Загружаем логику для:", selectedTask);
+
+        // Если выбрали базовый редактор — оставляем всё как есть
+        if (selectedTask === 'base') {
+            document.getElementById('btn-add-function').style.display = 'inline-block';
+            document.getElementById('btn-add-set').style.display = 'inline-block';
+            renderTree();
+            return;
+        }
+
+        // Прячем стандартные кнопки, так как у генераторов будет свой интерфейс
+        document.getElementById('btn-add-function').style.display = 'none';
+        document.getElementById('btn-add-set').style.display = 'none';
+
+        try {
+            // Здесь мы будем динамически импортировать нужный класс
+            // Например: const module = await import(`./src/ru/spb/ipo/taskgenerator/generator/${selectedTask}/КакойТоКласс.js`);
+            
+            alert(`Переключаемся на модуль: ${selectedTask}. Сейчас подключим его логику!`);
+            
+            // Очищаем дерево и XML для новой задачи
+            treeRootElement.innerHTML = '<p style="padding: 10px; color: #888;">Загрузка интерфейса генератора...</p>';
+            xmlEditor.value = ``;
+            propertiesPanel.innerHTML = '';
+
+        } catch (error) {
+            console.error("Ошибка при загрузке генератора:", error);
+            alert("Не удалось загрузить модуль. Проверь консоль (F12).");
+        }
     });
 });
