@@ -200,10 +200,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 
                 treeRootElement.parentElement.style.display = 'none';
                 
-                propertiesPanel.innerHTML = `
-                    <h3>Генератор: ${generatorInstance.getHelpString ? generatorInstance.getHelpString() : className}</h3>
-                    <p style="color: #4CAF50;">Класс успешно инициализирован!</p>
-                `;
+                // Передаем генератору правую панель, чтобы он сам в ней нарисовал свой интерфейс
+                if (generatorInstance.renderUI) {
+                    generatorInstance.renderUI(propertiesPanel);
+                } else {
+                    propertiesPanel.innerHTML = `<h3>${className}</h3><p>Метод renderUI не найден.</p>`;
+                }
             } else {
                 propertiesPanel.innerHTML = `<h3>${selectedTask}</h3><p>Этот генератор еще не подключен в main.js.</p>`;
             }
