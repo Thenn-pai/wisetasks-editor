@@ -10,6 +10,17 @@
     <header class="header">
         <h1>Wisetasks Web Editor</h1>
         <div class="toolbar">
+            <select id="generator-select" class="btn" style="background-color: #333; border: 1px solid #555; margin-right: 15px; font-family: inherit;">
+                <option value="base">Основной редактор задач</option>
+                <option value="cards">Генератор "Карты"</option>
+                <option value="word">Генератор "Работа со словами"</option>
+                <option value="numbers">Генератор "Работа с числами"</option>
+                <option value="equation">Генератор "Работа с уравнениями"</option>
+                <option value="basket">Генератор "Шары и Урны"</option>
+                <option value="digits">Генератор "Делимости / Остатки"</option>
+                <option value="chess">Генератор "Шахматы"</option>
+            </select>
+
             <button id="btn-add-function" class="btn">Добавить функцию</button>
             <button id="btn-add-set" class="btn">Добавить множество</button>
         </div>

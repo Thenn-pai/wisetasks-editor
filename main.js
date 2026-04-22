@@ -29,7 +29,7 @@ document.addEventListener('DOMContentLoaded', () => {
         
         const title = document.createElement('h3');
         // Очищаем название от HTML-тегов раскраски для красивого заголовка
-        title.textContent = `Настройки: ${node.getPresentableString().replace(/<[^>]+>/g, '')}`; 
+        title.textContent = `Настройки: ${node.getPresentableString().replace(/<[^>]+>/g, '').replace(/&nbsp;/g, ' ')}`;
         propertiesPanel.appendChild(title);
 
         const label = document.createElement('label');
@@ -171,4 +171,11 @@ document.addEventListener('DOMContentLoaded', () => {
     renderTree();
     Actions.updateXml();
     renderPropertiesPanel(selectedNode);
+    // Логика переключения между 8 задачами
+    document.getElementById('generator-select').addEventListener('change', (e) => {
+        const selectedTask = e.target.value;
+        console.log("Выбрана задача:", selectedTask);
+        // Здесь мы будем подключать логику из папки src/generator/...
+        alert("В разработке: Переключение на модуль " + selectedTask);
+    });
 });
