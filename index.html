@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wisetasks Editor</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header class="header">
+        <h1>Wisetasks Web Editor</h1>
+        <div class="toolbar">
+            <button id="btn-add-function" class="btn">Добавить функцию</button>
+            <button id="btn-add-set" class="btn">Добавить множество</button>
+        </div>
+    </header>
+
+    <div class="main-container">
+        <aside class="sidebar">
+            <h3>Дерево задачи</h3>
+            <div id="tree-container">
+                <ul id="task-tree"></ul>
+            </div>
+        </aside>
+
+        <main class="workspace">
+            <h3>Свойства элемента</h3>
+            <div id="properties-panel">
+                <p class="placeholder-text">Выберите элемент в дереве для редактирования</p>
+            </div>
+        </main>
+    </div>
+
+    <footer class="xml-output">
+        <h3>Сгенерированный XML</h3>
+        <textarea id="xml-editor" readonly placeholder="Здесь появится XML код..."></textarea>
+    </footer>
+
+    <script type="module" src="main.js"></script>
+</body>
+</html>
