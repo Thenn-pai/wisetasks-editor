@@ -15,7 +15,7 @@ document.addEventListener('DOMContentLoaded', () => {
     
     let selectedNode = app.modelTree.getRoot();
 
-    // Отрисовка панели свойств
+    // --- Отрисовка панели свойств ---
     function renderPropertiesPanel(node) {
         propertiesPanel.innerHTML = ''; 
 
@@ -27,16 +27,11 @@ document.addEventListener('DOMContentLoaded', () => {
         const element = node.getElement();
         if (!element) return;
         
+        // Исправленный заголовок без двойного const и без &nbsp;
         const title = document.createElement('h3');
-        // Очищаем название от HTML-тегов раскраски для красивого заголовка
-        const title = document.createElement('h3');
-        
-        // Создаем невидимый элемент, чтобы браузер сам "переварил" все HTML-теги и &nbsp;
         const tempDiv = document.createElement('div');
         tempDiv.innerHTML = node.getPresentableString();
-        title.textContent = `Настройки: ${tempDiv.textContent.trim()}`; // Берем только чистый текст
-        
-        propertiesPanel.appendChild(title);
+        title.textContent = `Настройки: ${tempDiv.textContent.trim()}`;
         propertiesPanel.appendChild(title);
 
         const label = document.createElement('label');
@@ -48,7 +43,6 @@ document.addEventListener('DOMContentLoaded', () => {
         const input = document.createElement('input');
         input.type = 'text';
         
-        // Надежно достаем текущий тип элемента
         let currentType = '';
         if (element.getType) currentType = element.getType();
         else if (element.type) currentType = element.type;
@@ -63,7 +57,6 @@ document.addEventListener('DOMContentLoaded', () => {
         input.style.border = '1px solid #333';
         input.style.borderRadius = '4px';
 
-        // Обновляем данные при вводе текста
         input.oninput = (e) => {
             const newValue = e.target.value;
             if (element.setType) element.setType(newValue);
@@ -78,7 +71,7 @@ document.addEventListener('DOMContentLoaded', () => {
         propertiesPanel.appendChild(label);
     }
 
-    // Отрисовка дерева (Исправленная версия)
+    // --- Отрисовка дерева ---
     function renderTree() {
         treeRootElement.innerHTML = ''; 
         const rootNode = app.modelTree.getRoot();
@@ -87,7 +80,6 @@ document.addEventListener('DOMContentLoaded', () => {
             const li = document.createElement('li');
             li.style.listStyle = 'none';
             
-            // Делаем кликабельным только текст (span), а не весь список
             const textSpan = document.createElement('div');
             textSpan.innerHTML = node.getPresentableString ? node.getPresentableString() : "Элемент";
             textSpan.style.padding = '4px 8px';
@@ -101,7 +93,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             textSpan.onclick = (e) => {
-                e.stopPropagation(); // Блокируем клик по родителю
+                e.stopPropagation(); 
                 selectedNode = node;
                 renderTree(); 
                 renderPropertiesPanel(node); 
@@ -111,7 +103,6 @@ document.addEventListener('DOMContentLoaded', () => {
             li.appendChild(textSpan);
             container.appendChild(li);
 
-            // Рекурсия для детей
             if (node.getChildCount && node.getChildCount() > 0) {
                 const ul = document.createElement('ul');
                 ul.style.paddingLeft = '15px';
@@ -148,7 +139,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const childNode = GraphicFactory.getView(childElement);
         targetNode.addChild(childNode); 
         
-        selectedNode = childNode; // Авто-выбор нового элемента
+        selectedNode = childNode; 
         renderTree();
         renderPropertiesPanel(selectedNode);
         Actions.updateXml();
@@ -175,41 +166,65 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    renderTree();
-    Actions.updateXml();
-    renderPropertiesPanel(selectedNode);
-    // Логика переключения между 8 задачами
-   // Логика переключения между 8 задачами
+    // --- Логика переключения генераторов (МЕНЮ) ---
     document.getElementById('generator-select').addEventListener('change', async (e) => {
         const selectedTask = e.target.value;
         console.log("Загружаем логику для:", selectedTask);
 
-        // Если выбрали базовый редактор — оставляем всё как есть
+        // Базовый редактор (возвращаем интерфейс дерева)
         if (selectedTask === 'base') {
             document.getElementById('btn-add-function').style.display = 'inline-block';
             document.getElementById('btn-add-set').style.display = 'inline-block';
+            treeRootElement.parentElement.style.display = 'block'; // Показываем панель дерева
             renderTree();
+            renderPropertiesPanel(selectedNode);
             return;
         }
 
-        // Прячем стандартные кнопки, так как у генераторов будет свой интерфейс
+        // Прячем стандартные кнопки дерева
         document.getElementById('btn-add-function').style.display = 'none';
         document.getElementById('btn-add-set').style.display = 'none';
 
         try {
-            // Здесь мы будем динамически импортировать нужный класс
-            // Например: const module = await import(`./src/ru/spb/ipo/taskgenerator/generator/${selectedTask}/КакойТоКласс.js`);
-            
-            alert(`Переключаемся на модуль: ${selectedTask}. Сейчас подключим его логику!`);
-            
-            // Очищаем дерево и XML для новой задачи
-            treeRootElement.innerHTML = '<p style="padding: 10px; color: #888;">Загрузка интерфейса генератора...</p>';
-            xmlEditor.value = ``;
-            propertiesPanel.innerHTML = '';
+            let modulePath = '';
+            let className = '';
+
+            // Подключение CardGenerator на основе твоего файла
+            if (selectedTask === 'cards') {
+                // ПРОВЕРЬ ЭТОТ ПУТЬ: он должен точно совпадать с папками в твоем проекте!
+                modulePath = './src/ru/spb/ipo/taskgenerator/generator/cards/CardGenerator.js';
+                className = 'CardGenerator';
+            }
+            // Здесь будем добавлять word, chess и остальные...
+
+            if (modulePath) {
+                // Динамически импортируем файл
+                const module = await import(modulePath);
+                const generatorInstance = new module[className](); // Создаем объект генератора
+                
+                // Прячем старое дерево
+                treeRootElement.parentElement.style.display = 'none';
+                
+                // Выводим интерфейс генератора в правую панель
+                propertiesPanel.innerHTML = `
+                    <h3>Генератор: ${generatorInstance.getHelpString ? generatorInstance.getHelpString() : className}</h3>
+                    <p style="color: #4CAF50;">Класс успешно инициализирован!</p>
+                    <p>Здесь скоро появятся кнопки настройки карт (bubi, chervi и т.д.).</p>
+                `;
+                
+                // TODO: Если в BaseGeneratorUI есть метод для получения HTML (например, render() или getHtml()), вызовем его здесь
+            } else {
+                propertiesPanel.innerHTML = `<h3>${selectedTask}</h3><p>Этот генератор еще не подключен в main.js.</p>`;
+            }
 
         } catch (error) {
             console.error("Ошибка при загрузке генератора:", error);
-            alert("Не удалось загрузить модуль. Проверь консоль (F12).");
+            propertiesPanel.innerHTML = `<h3 style="color: red;">Ошибка 404</h3><p>Не удалось найти файл по пути: <br><code>${modulePath}</code></p><p>Проверь пути в папке src!</p>`;
         }
     });
+
+    // --- Первый запуск ---
+    renderTree();
+    Actions.updateXml();
+    renderPropertiesPanel(selectedNode);
 });
