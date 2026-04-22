@@ -189,7 +189,8 @@ document.addEventListener('DOMContentLoaded', () => {
             let className = '';
 
             if (selectedTask === 'cards') {
-                modulePath = './src/ru/spb/ipo/taskgenerator/generator/cards/CardGenerator.js';
+                // Путь исправлен: убрали лишнюю папку taskgenerator
+                modulePath = './src/ru/spb/ipo/generator/cards/CardGenerator.js';
                 className = 'CardGenerator';
             }
 
