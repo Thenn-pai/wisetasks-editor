@@ -7,7 +7,6 @@ export class CardGenerator extends BaseGeneratorUI {
         this.currentSuit = 'chervi'; 
         this.conditions = []; 
         
-        // Добавлено разделение цветов: cardColor (для белых карт) и uiColor (для темных кнопок)
         this.suitsInfo = {
             'chervi': { name: 'Черви', symbol: '♥', cardColor: '#ef4444', uiColor: '#ef4444' },
             'bubi':   { name: 'Буби', symbol: '♦', cardColor: '#ef4444', uiColor: '#ef4444' },
@@ -188,7 +187,6 @@ export class CardGenerator extends BaseGeneratorUI {
             tag.style.border = '1px solid #475569';
             tag.style.borderRadius = '6px';
             
-            // Используем uiColor для условий
             const suitData = Object.values(this.suitsInfo).find(s => s.name === cond.name);
             const nameColor = suitData ? suitData.uiColor : '#f59e0b';
 
@@ -214,7 +212,6 @@ export class CardGenerator extends BaseGeneratorUI {
             btn.style.background = isSelected ? '#3b82f6' : '#1e293b';
             btn.style.border = isSelected ? '1px solid #60a5fa' : '1px solid #475569';
             btn.style.padding = '8px 15px';
-            // Используем uiColor для кнопок
             btn.innerHTML = `<span style="color: ${suitData.uiColor}; font-size: 16px;">${suitData.symbol}</span> <span style="color: ${isSelected ? '#fff' : '#cbd5e1'}">${suitData.name}</span>`;
             btn.onclick = () => { this.currentSuit = suitKey; this.renderSuits(); this.renderCards(); };
             this.suitsContainer.appendChild(btn);
@@ -230,7 +227,6 @@ export class CardGenerator extends BaseGeneratorUI {
             const cardId = `${rank.id}_${this.currentSuit}`;
             const isSelected = this.selectedCards.includes(cardId);
             const cardEl = document.createElement('div');
-            // Используем cardColor (черный/красный) для самих карт!
             cardEl.style.cssText = `width:45px; height:65px; border-radius:6px; cursor:pointer; user-select:none; display:flex; flex-direction:column; justify-content:center; align-items:center; color:${suitData.cardColor}; background:${isSelected ? '#fef08a' : '#f8fafc'}; border:${isSelected ? '3px solid #f59e0b' : '1px solid #cbd5e1'}; font-size:14px; font-weight:bold; box-shadow: ${isSelected ? '0 0 10px rgba(245, 158, 11, 0.4)' : '0 2px 4px rgba(0,0,0,0.1)'}; transition: transform 0.1s;`;
             cardEl.innerHTML = `${rank.label}<br><span style="font-size:22px; line-height:1;">${suitData.symbol}</span>`;
             
@@ -286,9 +282,11 @@ export class CardGenerator extends BaseGeneratorUI {
             return;
         }
 
+        // Вычисляем наивный путь
         let remainingN = N;
         let remainingK = K;
         let naiveCombinations = 1;
+        let naiveLog = "";
 
         for (const cond of this.conditions) {
             const matchingCards = this.selectedCards.filter(cardId => {
@@ -299,7 +297,7 @@ export class CardGenerator extends BaseGeneratorUI {
             const needed = cond.count;
 
             const waysForThis = this.combinations(poolSize, needed);
-            log += `• Выбираем «${cond.name}» (${needed} из ${poolSize}): C(${poolSize}, ${needed}) = <b>${waysForThis}</b><br>`;
+            naiveLog += `• Выбираем «${cond.name}» (${needed} из ${poolSize}): C(${poolSize}, ${needed}) = <b>${waysForThis}</b><br>`;
             
             naiveCombinations *= waysForThis;
             remainingN -= poolSize;
@@ -307,22 +305,66 @@ export class CardGenerator extends BaseGeneratorUI {
         }
 
         const remainingWays = this.combinations(remainingN, remainingK);
-        log += `• Добираем остальные ${remainingK} карт из оставшихся ${remainingN}: C(${remainingN}, ${remainingK}) = <b>${remainingWays}</b><br>`;
+        naiveLog += `• Добираем остальные ${remainingK} карт из оставшихся ${remainingN}: C(${remainingN}, ${remainingK}) = <b>${remainingWays}</b><br>`;
         naiveCombinations *= remainingWays;
 
+        // Вычисляем точный путь
         let exactCount = this.calculateExactCombinations(K);
         
         if (exactCount === naiveCombinations) {
+             // Нет пересечений - выводим наивный лог как основной
+             log += naiveLog;
              log += `<br><strong style="color:#10b981; font-size:18px;">Итоговый ответ: ${exactCount} комбинаций.</strong>`;
+        } else if (this.conditions.length === 2 && this.conditions[0].type !== this.conditions[1].type) {
+             // ИДЕАЛЬНОЕ ОБЪЯСНЕНИЕ для классики (Масть + Номинал)
+             log += `<div style="background: rgba(245, 158, 11, 0.1); border-left: 3px solid #f59e0b; padding: 15px; margin-top: 10px; border-radius: 4px;">`;
+             log += `<span style="color:#f59e0b; font-weight:bold; font-size:15px;">⚠️ Обнаружено пересечение множеств!</span><br><br>`;
+             log += `Карта <b>«${this.conditions[1].name} ${this.conditions[0].name}»</b> подходит под оба условия. Мы должны разделить решение на две непересекающиеся гипотезы:<br><br>`;
+             
+             // Данные для гипотез
+             const suitCond = this.conditions.find(c => c.type === 'suit');
+             const rankCond = this.conditions.find(c => c.type === 'rank');
+             const suitPool = this.selectedCards.filter(c => c.split('_')[1] === suitCond.value).length;
+             const rankPool = this.selectedCards.filter(c => c.split('_')[0] === rankCond.value).length;
+             
+             // Гипотеза А (Карта пересечения в руке)
+             log += `<b style="color:#60a5fa;">Гипотеза А: Карта-пересечение ВЫТЯНУТА</b><br>`;
+             const waysA_suit = this.combinations(suitPool - 1, suitCond.count - 1);
+             const waysA_rank = this.combinations(rankPool - 1, rankCond.count - 1);
+             const leftToDrawA = K - 1 - (suitCond.count - 1) - (rankCond.count - 1);
+             const leftInDeckA = N - 1 - (suitPool - 1) - (rankPool - 1);
+             const waysA_rest = this.combinations(leftInDeckA, leftToDrawA);
+             const totalA = waysA_suit * waysA_rank * waysA_rest;
+             
+             log += `• Тянем пересечение (1 из 1): C(1, 1) = 1<br>`;
+             log += `• Добираем «${suitCond.name}» (${suitCond.count-1} из ${suitPool-1}): C(${suitPool-1}, ${suitCond.count-1}) = ${waysA_suit}<br>`;
+             log += `• Добираем «${rankCond.name}» (${rankCond.count-1} из ${rankPool-1}): C(${rankPool-1}, ${rankCond.count-1}) = ${waysA_rank}<br>`;
+             log += `• Добираем остаток (${leftToDrawA} из ${leftInDeckA}): C(${leftInDeckA}, ${leftToDrawA}) = ${waysA_rest}<br>`;
+             log += `<i>Комбинаций для Гипотезы А: 1 * ${waysA_suit} * ${waysA_rank} * ${waysA_rest} = <b style="color:white;">${totalA}</b></i><br><br>`;
+
+             // Гипотеза Б (Карты пересечения нет)
+             log += `<b style="color:#60a5fa;">Гипотеза Б: Карты-пересечения НЕТ в руке</b><br>`;
+             const waysB_suit = this.combinations(suitPool - 1, suitCond.count);
+             const waysB_rank = this.combinations(rankPool - 1, rankCond.count);
+             const leftToDrawB = K - suitCond.count - rankCond.count;
+             const leftInDeckB = N - 1 - (suitPool - 1) - (rankPool - 1);
+             const waysB_rest = this.combinations(leftInDeckB, leftToDrawB);
+             const totalB = waysB_suit * waysB_rank * waysB_rest;
+
+             log += `• Тянем «${suitCond.name}» (${suitCond.count} из ${suitPool-1}): C(${suitPool-1}, ${suitCond.count}) = ${waysB_suit}<br>`;
+             log += `• Тянем «${rankCond.name}» (${rankCond.count} из ${rankPool-1}): C(${rankPool-1}, ${rankCond.count}) = ${waysB_rank}<br>`;
+             log += `• Добираем остаток (${leftToDrawB} из ${leftInDeckB}): C(${leftInDeckB}, ${leftToDrawB}) = ${waysB_rest}<br>`;
+             log += `<i>Комбинаций для Гипотезы Б: ${waysB_suit} * ${waysB_rank} * ${waysB_rest} = <b style="color:white;">${totalB}</b></i><br><br>`;
+
+             log += `Складываем гипотезы: ${totalA} + ${totalB} = <b>${exactCount}</b></div><br>`;
+             log += `<strong style="color:#10b981; font-size:18px;">Итоговый точный ответ: ${exactCount} комбинаций.</strong>`;
+
         } else {
-             log += `<br><div style="background: rgba(245, 158, 11, 0.1); border-left: 3px solid #f59e0b; padding: 10px; margin-top: 10px;">`;
-             log += `<span style="color:#f59e0b; font-weight:bold;">⚠️ Обнаружено пересечение множеств!</span><br>`;
-             log += `Наивный расчет дал ответ ${naiveCombinations}, но алгоритм нашел карту, подходящую под оба условия одновременно (например, Девятку Пик).<br><br>`;
-             log += `<b>Правильный ход решения строится на разделении гипотез:</b><br>`;
-             log += `1) <i>Случай А:</i> Мы вытянули карту-пересечение. Тогда нам нужно добрать на 1 карту меньше из первого условия и на 1 меньше из второго.<br>`;
-             log += `2) <i>Случай Б:</i> Мы НЕ вытянули эту карту. Тогда мы тянем карты строго из "чистых" остатков мастей и номиналов.<br>`;
-             log += `Сумма этих непересекающихся случаев дает верный ответ.</div><br>`;
-             log += `<strong style="color:#10b981; font-size:18px;">Точный ответ (после сложения гипотез): ${exactCount} комбинаций.</strong>`;
+             // Для сложных многослойных пересечений (3+ условий)
+             log += `<div style="background: rgba(245, 158, 11, 0.1); border-left: 3px solid #f59e0b; padding: 15px; margin-top: 10px; border-radius: 4px;">`;
+             log += `<span style="color:#f59e0b; font-weight:bold; font-size:15px;">⚠️ Сложное многоуровневое пересечение!</span><br><br>`;
+             log += `В задаче ${this.conditions.length} пересекающихся условий. Для решения применена формула включений-исключений (симуляция древа вероятностей).<br>Наивный расчет (${naiveCombinations}) отброшен как неточный.</div><br>`;
+             log += `<strong style="color:#10b981; font-size:18px;">Точный ответ алгоритма: ${exactCount} комбинаций.</strong>`;
         }
         
         solutionText.innerHTML = log;
