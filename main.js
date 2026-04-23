@@ -21,9 +21,15 @@ document.addEventListener('DOMContentLoaded', () => {
             } else if (selectedTask === 'equation') {
                 modulePath = './src/ru/spb/ipo/generator/equation/EquationGenerator.js';
                 className = 'EquationGenerator';
-            } else if (selectedTask === 'basket') { // <--- ДОБАВЛЯЕМ ШАРЫ И УРНЫ
+            } else if (selectedTask === 'basket') {
                 modulePath = './src/ru/spb/ipo/generator/basket/BasketGenerator.js';
                 className = 'BasketGenerator';
+            } else if (selectedTask === 'digits') { 
+                modulePath = './src/ru/spb/ipo/generator/digits/DigitsGenerator.js';
+                className = 'DigitsGenerator';
+            } else if (selectedTask === 'chess') { // <--- ДОБАВЛЯЕМ ШАХМАТЫ (ФИНАЛ!)
+                modulePath = './src/ru/spb/ipo/generator/chess/ChessGenerator.js';
+                className = 'ChessGenerator';
             }
 
             if (modulePath) {
