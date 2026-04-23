@@ -18,9 +18,12 @@ document.addEventListener('DOMContentLoaded', () => {
             } else if (selectedTask === 'numbers') {
                 modulePath = './src/ru/spb/ipo/generator/numbers/NumbersGenerator.js';
                 className = 'NumbersGenerator';
-            } else if (selectedTask === 'equation') { // <--- ДОБАВЛЯЕМ УРАВНЕНИЯ
+            } else if (selectedTask === 'equation') {
                 modulePath = './src/ru/spb/ipo/generator/equation/EquationGenerator.js';
                 className = 'EquationGenerator';
+            } else if (selectedTask === 'basket') { // <--- ДОБАВЛЯЕМ ШАРЫ И УРНЫ
+                modulePath = './src/ru/spb/ipo/generator/basket/BasketGenerator.js';
+                className = 'BasketGenerator';
             }
 
             if (modulePath) {
