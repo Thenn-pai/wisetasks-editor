@@ -7,11 +7,12 @@ export class CardGenerator extends BaseGeneratorUI {
         this.currentSuit = 'chervi'; 
         this.conditions = []; 
         
+        // Добавлено разделение цветов: cardColor (для белых карт) и uiColor (для темных кнопок)
         this.suitsInfo = {
-            'chervi': { name: 'Черви', symbol: '♥', color: '#ff4d4d' },
-            'bubi':   { name: 'Буби', symbol: '♦', color: '#ff4d4d' },
-            'tref':   { name: 'Трефы', symbol: '♣', color: '#e0e0e0' },
-            'pik':    { name: 'Пики', symbol: '♠', color: '#e0e0e0' }
+            'chervi': { name: 'Черви', symbol: '♥', cardColor: '#ef4444', uiColor: '#ef4444' },
+            'bubi':   { name: 'Буби', symbol: '♦', cardColor: '#ef4444', uiColor: '#ef4444' },
+            'tref':   { name: 'Трефы', symbol: '♣', cardColor: '#111111', uiColor: '#cbd5e1' },
+            'pik':    { name: 'Пики', symbol: '♠', cardColor: '#111111', uiColor: '#cbd5e1' }
         };
         
         this.ranks = [
@@ -155,7 +156,6 @@ export class CardGenerator extends BaseGeneratorUI {
         container.querySelector('#generate-xml-btn').onclick = () => {
             this.generateProblemText(container);
             this.solveMath(container);
-            // Генерация XML убрана из UI, но метод можно оставить в логике, если понадобится выгрузка
         };
     }
 
@@ -188,8 +188,12 @@ export class CardGenerator extends BaseGeneratorUI {
             tag.style.border = '1px solid #475569';
             tag.style.borderRadius = '6px';
             
+            // Используем uiColor для условий
+            const suitData = Object.values(this.suitsInfo).find(s => s.name === cond.name);
+            const nameColor = suitData ? suitData.uiColor : '#f59e0b';
+
             tag.innerHTML = `
-                <span style="color: #cbd5e1;">В выборке должно быть: <strong style="color:#f8fafc; font-size: 15px;">${cond.count}</strong> шт. из группы «<strong style="color:#f59e0b;">${cond.name}</strong>»</span>
+                <span style="color: #cbd5e1;">В выборке должно быть: <strong style="color:#f8fafc; font-size: 15px;">${cond.count}</strong> шт. из группы «<strong style="color:${nameColor};">${cond.name}</strong>»</span>
                 <span style="color: #ef4444; cursor: pointer; font-weight: bold; padding: 0 5px;" title="Удалить">✕</span>
             `;
             
@@ -210,7 +214,8 @@ export class CardGenerator extends BaseGeneratorUI {
             btn.style.background = isSelected ? '#3b82f6' : '#1e293b';
             btn.style.border = isSelected ? '1px solid #60a5fa' : '1px solid #475569';
             btn.style.padding = '8px 15px';
-            btn.innerHTML = `<span style="color: ${suitData.color}; font-size: 16px;">${suitData.symbol}</span> ${suitData.name}`;
+            // Используем uiColor для кнопок
+            btn.innerHTML = `<span style="color: ${suitData.uiColor}; font-size: 16px;">${suitData.symbol}</span> <span style="color: ${isSelected ? '#fff' : '#cbd5e1'}">${suitData.name}</span>`;
             btn.onclick = () => { this.currentSuit = suitKey; this.renderSuits(); this.renderCards(); };
             this.suitsContainer.appendChild(btn);
         }
@@ -225,7 +230,8 @@ export class CardGenerator extends BaseGeneratorUI {
             const cardId = `${rank.id}_${this.currentSuit}`;
             const isSelected = this.selectedCards.includes(cardId);
             const cardEl = document.createElement('div');
-            cardEl.style.cssText = `width:45px; height:65px; border-radius:6px; cursor:pointer; user-select:none; display:flex; flex-direction:column; justify-content:center; align-items:center; color:${suitData.color}; background:${isSelected ? '#fef08a' : '#f8fafc'}; border:${isSelected ? '3px solid #f59e0b' : '1px solid #cbd5e1'}; font-size:14px; font-weight:bold; box-shadow: ${isSelected ? '0 0 10px rgba(245, 158, 11, 0.4)' : '0 2px 4px rgba(0,0,0,0.1)'}; transition: transform 0.1s;`;
+            // Используем cardColor (черный/красный) для самих карт!
+            cardEl.style.cssText = `width:45px; height:65px; border-radius:6px; cursor:pointer; user-select:none; display:flex; flex-direction:column; justify-content:center; align-items:center; color:${suitData.cardColor}; background:${isSelected ? '#fef08a' : '#f8fafc'}; border:${isSelected ? '3px solid #f59e0b' : '1px solid #cbd5e1'}; font-size:14px; font-weight:bold; box-shadow: ${isSelected ? '0 0 10px rgba(245, 158, 11, 0.4)' : '0 2px 4px rgba(0,0,0,0.1)'}; transition: transform 0.1s;`;
             cardEl.innerHTML = `${rank.label}<br><span style="font-size:22px; line-height:1;">${suitData.symbol}</span>`;
             
             cardEl.onmouseenter = () => cardEl.style.transform = 'translateY(-3px)';
