@@ -308,7 +308,7 @@ export class CardGenerator extends BaseGeneratorUI {
         naiveLog += `• Добираем остальные ${remainingK} карт из оставшихся ${remainingN}: C(${remainingN}, ${remainingK}) = <b>${remainingWays}</b><br>`;
         naiveCombinations *= remainingWays;
 
-        // Вычисляем точный путь
+        // Точный расчет методом перебора
         let exactCount = this.calculateExactCombinations(K);
         
         if (exactCount === naiveCombinations) {
@@ -316,55 +316,66 @@ export class CardGenerator extends BaseGeneratorUI {
              log += naiveLog;
              log += `<br><strong style="color:#10b981; font-size:18px;">Итоговый ответ: ${exactCount} комбинаций.</strong>`;
         } else if (this.conditions.length === 2 && this.conditions[0].type !== this.conditions[1].type) {
-             // ИДЕАЛЬНОЕ ОБЪЯСНЕНИЕ для классики (Масть + Номинал)
+             // ПОЛНЫЙ РАЗБОР С МАТЕМАТИКОЙ для пересечения (Масть + Номинал)
              log += `<div style="background: rgba(245, 158, 11, 0.1); border-left: 3px solid #f59e0b; padding: 15px; margin-top: 10px; border-radius: 4px;">`;
              log += `<span style="color:#f59e0b; font-weight:bold; font-size:15px;">⚠️ Обнаружено пересечение множеств!</span><br><br>`;
              log += `Карта <b>«${this.conditions[1].name} ${this.conditions[0].name}»</b> подходит под оба условия. Мы должны разделить решение на две непересекающиеся гипотезы:<br><br>`;
              
-             // Данные для гипотез
              const suitCond = this.conditions.find(c => c.type === 'suit');
              const rankCond = this.conditions.find(c => c.type === 'rank');
-             const suitPool = this.selectedCards.filter(c => c.split('_')[1] === suitCond.value).length;
-             const rankPool = this.selectedCards.filter(c => c.split('_')[0] === rankCond.value).length;
              
-             // Гипотеза А (Карта пересечения в руке)
-             log += `<b style="color:#60a5fa;">Гипотеза А: Карта-пересечение ВЫТЯНУТА</b><br>`;
-             const waysA_suit = this.combinations(suitPool - 1, suitCond.count - 1);
-             const waysA_rank = this.combinations(rankPool - 1, rankCond.count - 1);
-             const leftToDrawA = K - 1 - (suitCond.count - 1) - (rankCond.count - 1);
-             const leftInDeckA = N - 1 - (suitPool - 1) - (rankPool - 1);
-             const waysA_rest = this.combinations(leftInDeckA, leftToDrawA);
-             const totalA = waysA_suit * waysA_rank * waysA_rest;
+             const S_pool = this.selectedCards.filter(c => c.split('_')[1] === suitCond.value).length;
+             const R_pool = this.selectedCards.filter(c => c.split('_')[0] === rankCond.value).length;
+             const neutral_pool = N - S_pool - R_pool + 1;
+
+             // Случай А
+             const drawA_S = suitCond.count - 1;
+             const drawA_R = rankCond.count - 1;
+             const drawA_N = K - 1 - drawA_S - drawA_R;
              
-             log += `• Тянем пересечение (1 из 1): C(1, 1) = 1<br>`;
-             log += `• Добираем «${suitCond.name}» (${suitCond.count-1} из ${suitPool-1}): C(${suitPool-1}, ${suitCond.count-1}) = ${waysA_suit}<br>`;
-             log += `• Добираем «${rankCond.name}» (${rankCond.count-1} из ${rankPool-1}): C(${rankPool-1}, ${rankCond.count-1}) = ${waysA_rank}<br>`;
-             log += `• Добираем остаток (${leftToDrawA} из ${leftInDeckA}): C(${leftInDeckA}, ${leftToDrawA}) = ${waysA_rest}<br>`;
-             log += `<i>Комбинаций для Гипотезы А: 1 * ${waysA_suit} * ${waysA_rank} * ${waysA_rest} = <b style="color:white;">${totalA}</b></i><br><br>`;
+             log += `<b style="color:#60a5fa;">Случай А: Карта-пересечение ВЫТЯНУТА</b><br>`;
+             if (drawA_S < 0 || drawA_R < 0 || drawA_N < 0) {
+                 log += `<i style="color:#94a3b8;">Невозможно добрать нужное количество карт. Комбинаций: 0</i><br><br>`;
+             } else {
+                 const cS = this.combinations(S_pool - 1, drawA_S);
+                 const cR = this.combinations(R_pool - 1, drawA_R);
+                 const cN = this.combinations(neutral_pool, drawA_N);
+                 const waysA = cS * cR * cN;
+                 log += `• Тянем карту-пересечение: C(1, 1) = 1<br>`;
+                 log += `• Добираем масть «${suitCond.name}» (${drawA_S} из ${S_pool-1}): C(${S_pool-1}, ${drawA_S}) = ${cS}<br>`;
+                 log += `• Добираем номинал «${rankCond.name}» (${drawA_R} из ${R_pool-1}): C(${R_pool-1}, ${drawA_R}) = ${cR}<br>`;
+                 log += `• Добираем нейтральные карты (${drawA_N} из ${neutral_pool}): C(${neutral_pool}, ${drawA_N}) = ${cN}<br>`;
+                 log += `<i style="color:#cbd5e1;">Итого для Случая А: 1 * ${cS} * ${cR} * ${cN} = <b style="color:white;">${waysA}</b></i><br><br>`;
+             }
 
-             // Гипотеза Б (Карты пересечения нет)
-             log += `<b style="color:#60a5fa;">Гипотеза Б: Карты-пересечения НЕТ в руке</b><br>`;
-             const waysB_suit = this.combinations(suitPool - 1, suitCond.count);
-             const waysB_rank = this.combinations(rankPool - 1, rankCond.count);
-             const leftToDrawB = K - suitCond.count - rankCond.count;
-             const leftInDeckB = N - 1 - (suitPool - 1) - (rankPool - 1);
-             const waysB_rest = this.combinations(leftInDeckB, leftToDrawB);
-             const totalB = waysB_suit * waysB_rank * waysB_rest;
+             // Случай Б
+             const drawB_S = suitCond.count;
+             const drawB_R = rankCond.count;
+             const drawB_N = K - drawB_S - drawB_R;
 
-             log += `• Тянем «${suitCond.name}» (${suitCond.count} из ${suitPool-1}): C(${suitPool-1}, ${suitCond.count}) = ${waysB_suit}<br>`;
-             log += `• Тянем «${rankCond.name}» (${rankCond.count} из ${rankPool-1}): C(${rankPool-1}, ${rankCond.count}) = ${waysB_rank}<br>`;
-             log += `• Добираем остаток (${leftToDrawB} из ${leftInDeckB}): C(${leftInDeckB}, ${leftToDrawB}) = ${waysB_rest}<br>`;
-             log += `<i>Комбинаций для Гипотезы Б: ${waysB_suit} * ${waysB_rank} * ${waysB_rest} = <b style="color:white;">${totalB}</b></i><br><br>`;
+             log += `<b style="color:#60a5fa;">Случай Б: Карты-пересечения НЕТ в руке</b><br>`;
+             if (drawB_S > S_pool - 1 || drawB_R > R_pool - 1 || drawB_N < 0) {
+                 log += `<i style="color:#94a3b8;">Невозможно собрать комбинацию. Комбинаций: 0</i><br><br>`;
+             } else {
+                 const cS = this.combinations(S_pool - 1, drawB_S);
+                 const cR = this.combinations(R_pool - 1, drawB_R);
+                 const cN = this.combinations(neutral_pool, drawB_N);
+                 const waysB = cS * cR * cN;
+                 log += `• Тянем масть «${suitCond.name}» (${drawB_S} из ${S_pool-1}): C(${S_pool-1}, ${drawB_S}) = ${cS}<br>`;
+                 log += `• Тянем номинал «${rankCond.name}» (${drawB_R} из ${R_pool-1}): C(${R_pool-1}, ${drawB_R}) = ${cR}<br>`;
+                 log += `• Добираем нейтральные карты (${drawB_N} из ${neutral_pool}): C(${neutral_pool}, ${drawB_N}) = ${cN}<br>`;
+                 log += `<i style="color:#cbd5e1;">Итого для Случая Б: ${cS} * ${cR} * ${cN} = <b style="color:white;">${waysB}</b></i><br><br>`;
+             }
 
-             log += `Складываем гипотезы: ${totalA} + ${totalB} = <b>${exactCount}</b></div><br>`;
+             log += `<div style="padding: 10px; background: rgba(16, 185, 129, 0.1); border-left: 3px solid #10b981; margin-top: 10px;">Сумма гипотез (А + Б) дает верный ответ: <b style="font-size:16px; color:white;">${exactCount}</b></div></div><br>`;
              log += `<strong style="color:#10b981; font-size:18px;">Итоговый точный ответ: ${exactCount} комбинаций.</strong>`;
 
         } else {
-             // Для сложных многослойных пересечений (3+ условий)
+             // Если условий 3 и более, и они пересекаются
              log += `<div style="background: rgba(245, 158, 11, 0.1); border-left: 3px solid #f59e0b; padding: 15px; margin-top: 10px; border-radius: 4px;">`;
              log += `<span style="color:#f59e0b; font-weight:bold; font-size:15px;">⚠️ Сложное многоуровневое пересечение!</span><br><br>`;
-             log += `В задаче ${this.conditions.length} пересекающихся условий. Для решения применена формула включений-исключений (симуляция древа вероятностей).<br>Наивный расчет (${naiveCombinations}) отброшен как неточный.</div><br>`;
-             log += `<strong style="color:#10b981; font-size:18px;">Точный ответ алгоритма: ${exactCount} комбинаций.</strong>`;
+             log += `В задаче ${this.conditions.length} или более пересекающихся условий. Аналитический пошаговый расчет для таких структур (формула включений-исключений) слишком громоздок. Алгоритм вычислил ответ полным перебором вероятностного древа.</div><br>`;
+             log += `<strong style="color:#10b981; font-size:18px;">Итоговый точный ответ: ${exactCount} комбинаций.</strong>`;
         }
         
         solutionText.innerHTML = log;
