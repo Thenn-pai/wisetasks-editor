@@ -5,7 +5,7 @@ export class CardGenerator extends BaseGeneratorUI {
         super();
         this.selectedCards = []; 
         this.currentSuit = 'chervi'; 
-        this.conditions = []; // Хранилище созданных ограничений (условий)
+        this.conditions = []; 
         
         this.suitsInfo = {
             'chervi': { name: 'Черви', symbol: '♥', color: '#ff4d4d' },
@@ -35,7 +35,8 @@ export class CardGenerator extends BaseGeneratorUI {
 
     combinations(n, k) {
         if (k < 0 || k > n) return 0;
-        return this.fact(n) / (this.fact(k) * this.fact(n - k));
+        // Исправлен баг с дробными числами (Math.round)
+        return Math.round(this.fact(n) / (this.fact(k) * this.fact(n - k)));
     }
 
     // --- ИНТЕРФЕЙС ---
@@ -70,9 +71,8 @@ export class CardGenerator extends BaseGeneratorUI {
                         <option value="suit">Масть</option>
                         <option value="rank">Номинал (Ранг)</option>
                     </select>
-                    <select id="cond-value" style="padding: 5px; background: #1e1e1e; color: white; border: 1px solid #555;">
-                        </select>
-                    <span style="color: #aaa;">В количестве:</span>
+                    <select id="cond-value" style="padding: 5px; background: #1e1e1e; color: white; border: 1px solid #555;"></select>
+                    <span style="color: #aaa;">Кол-во:</span>
                     <input type="number" id="cond-count" value="2" min="1" max="36" style="width: 50px; padding: 5px; background: #1e1e1e; color: white; border: 1px solid #555;">
                     <button id="add-cond-btn" class="btn" style="background: #007acc; padding: 5px 10px;">+ Добавить</button>
                 </div>
@@ -80,10 +80,14 @@ export class CardGenerator extends BaseGeneratorUI {
                 <div id="conditions-list" style="margin-top: 10px; display: flex; flex-direction: column; gap: 5px;"></div>
             </div>
 
-            <button id="generate-xml-btn" class="btn" style="width: 100%; background-color: #28a745; font-size: 16px; padding: 12px; border-radius: 5px; margin-bottom: 15px;">Сгенерировать XML и Решить</button>
+            <button id="generate-xml-btn" class="btn" style="width: 100%; background-color: #28a745; font-size: 16px; padding: 12px; border-radius: 5px; margin-bottom: 15px;">Сгенерировать Задачу и Решить</button>
 
-            <div id="solution-box" style="display: none; padding: 15px; background: #1e1e1e; border-left: 4px solid #e67e22; border-radius: 4px; margin-bottom: 20px;">
-                <h4 style="margin: 0 0 10px 0; color: #e67e22;">Ход решения:</h4>
+            <div id="solution-box" style="display: none; padding: 15px; background: #1e1e1e; border-left: 4px solid #28a745; border-radius: 4px; margin-bottom: 20px;">
+                
+                <h4 style="margin: 0 0 10px 0; color: #64b5f6;">Сгенерированное условие:</h4>
+                <div id="problem-text" style="font-size: 15px; line-height: 1.5; color: #fff; background: #252526; padding: 10px; border-radius: 4px; margin-bottom: 15px;"></div>
+
+                <h4 style="margin: 0 0 10px 0; color: #e67e22;">Анализ решения:</h4>
                 <div id="solution-text" style="font-size: 14px; line-height: 1.6; color: #ddd; font-family: monospace;"></div>
             </div>
         `;
@@ -128,6 +132,7 @@ export class CardGenerator extends BaseGeneratorUI {
 
         container.querySelector('#generate-xml-btn').onclick = () => {
             this.generateXmlToEditor(container);
+            this.generateProblemText(container);
             this.solveMath(container);
         };
     }
@@ -213,6 +218,26 @@ export class CardGenerator extends BaseGeneratorUI {
         });
     }
 
+    // --- ГЕНЕРАТОР ТЕКСТА ЗАДАЧИ ---
+    generateProblemText(container) {
+        const k = container.querySelector('#combo-k').value;
+        const textBox = container.querySelector('#problem-text');
+        
+        let text = `Из колоды в ${this.selectedCards.length} карт вытаскивают случайным образом ${k} карт. Подсчитайте количество наборов, в которых `;
+        
+        if (this.conditions.length === 0) {
+            text += `нет никаких дополнительных условий.`;
+        } else {
+            let condTexts = this.conditions.map(cond => {
+                if (cond.type === 'suit') return `количество карт масти «${cond.name}» равно ${cond.count}`;
+                else return `имеется карта номинала «${cond.name}» в количестве ${cond.count}`;
+            });
+            text += condTexts.join(', ') + '.';
+        }
+        
+        textBox.innerHTML = text;
+    }
+
     // --- РЕШАТЕЛЬ ЗАДАЧИ ---
     solveMath(container) {
         const solutionBox = container.querySelector('#solution-box');
@@ -223,18 +248,12 @@ export class CardGenerator extends BaseGeneratorUI {
         const K = parseInt(container.querySelector('#combo-k').value);
 
         if (N === 0) {
-            solutionText.innerHTML = "<span style='color:red;'>Ошибка: База карт пуста. Сначала добавьте карты в набор!</span>";
-            return;
-        }
-        if (K > N) {
-            solutionText.innerHTML = `<span style='color:red;'>Ошибка: Нельзя вытянуть ${K} карт из колоды в ${N} карт.</span>`;
+            solutionText.innerHTML = "<span style='color:red;'>Ошибка: База карт пуста.</span>";
             return;
         }
 
         let totalWays = this.combinations(N, K);
-        let log = `Всего карт в базе: <b>N = ${N}</b><br>`;
-        log += `Нужно вытянуть: <b>k = ${K}</b><br>`;
-        log += `Всего возможных комбинаций без ограничений: C(${N}, ${K}) = <b>${totalWays}</b><br><br>`;
+        let log = `Всего возможных комбинаций без ограничений: C(${N}, ${K}) = <b>${totalWays}</b><br><br>`;
 
         if (this.conditions.length === 0) {
             log += `<strong style="color:#28a745;">Ответ: ${totalWays} комбинаций.</strong>`;
@@ -242,13 +261,12 @@ export class CardGenerator extends BaseGeneratorUI {
             return;
         }
 
-        log += `<span style="color:#64b5f6;">--- Применяем ограничения ---</span><br>`;
+        log += `<span style="color:#64b5f6;">--- Наивный расчет (пошаговый) ---</span><br>`;
         let remainingN = N;
         let remainingK = K;
-        let validCombinations = 1;
+        let naiveCombinations = 1;
 
         for (const cond of this.conditions) {
-            // Ищем подходящие карты в базе
             const matchingCards = this.selectedCards.filter(cardId => {
                 const parts = cardId.split('_');
                 return cond.type === 'suit' ? parts[1] === cond.value : parts[0] === cond.value;
@@ -258,39 +276,69 @@ export class CardGenerator extends BaseGeneratorUI {
             const needed = cond.count;
 
             log += `> Условие: ${cond.name} (${needed} шт.)<br>`;
-            log += `В базе таких карт: ${poolSize} шт.<br>`;
-
-            if (needed > poolSize) {
-                log += `<strong style="color:red;">Задача не имеет решения (0 вариантов).</strong> Вы просите ${needed} карт, а в колоде их всего ${poolSize}.`;
-                solutionText.innerHTML = log;
-                return;
-            }
-
             const waysForThis = this.combinations(poolSize, needed);
-            log += `Кол-во способов выбрать эти карты: C(${poolSize}, ${needed}) = ${waysForThis}<br><br>`;
+            log += `В базе таких карт: ${poolSize}. Способов выбрать: C(${poolSize}, ${needed}) = ${waysForThis}<br><br>`;
             
-            validCombinations *= waysForThis;
+            naiveCombinations *= waysForThis;
             remainingN -= poolSize;
             remainingK -= needed;
         }
 
-        if (remainingK < 0) {
-             log += `<strong style="color:red;">Ошибка: Вы запросили в условиях больше карт, чем размер выборки (k).</strong>`;
-             solutionText.innerHTML = log;
-             return;
-        }
-
-        log += `> Добираем остальные карты:<br>`;
-        log += `Осталось дотянуть карт: ${remainingK}<br>`;
-        log += `Осталось свободных карт в колоде: ${remainingN}<br>`;
-        
         const remainingWays = this.combinations(remainingN, remainingK);
-        log += `Способов добрать: C(${remainingN}, ${remainingK}) = ${remainingWays}<br><br>`;
-        
-        validCombinations *= remainingWays;
+        log += `> Добираем остальные ${remainingK} карт из оставшихся ${remainingN}: C(${remainingN}, ${remainingK}) = ${remainingWays}<br>`;
+        naiveCombinations *= remainingWays;
 
-        log += `<strong style="color:#28a745; font-size:16px;">Итоговый ответ: ${validCombinations} комбинаций.</strong>`;
+        log += `<i>Ответ наивного расчета: ${naiveCombinations}</i><br><br>`;
+
+        // Точный расчет методом симуляции
+        log += `<span style="color:#e67e22;">--- Точный расчет (с учетом пересечений карт) ---</span><br>`;
+        let exactCount = this.calculateExactCombinations(K);
+        
+        if (exactCount === naiveCombinations) {
+             log += `Пересечений между условиями нет.<br>`;
+        } else {
+             log += `⚠️ Алгоритм обнаружил карту, попадающую под оба условия (например, Девятка Пик). Наивный расчет неточен.<br>`;
+        }
+        
+        log += `<strong style="color:#28a745; font-size:16px;">Итоговый точный ответ: ${exactCount} комбинаций.</strong>`;
         solutionText.innerHTML = log;
+    }
+
+    // Точный алгоритм проверки (работает как часы)
+    calculateExactCombinations(K) {
+        let count = 0;
+        const deck = this.selectedCards;
+        const conds = this.conditions;
+
+        // Рекурсивный перебор сочетаний
+        const generateCombinations = (start, combo) => {
+            if (combo.length === K) {
+                // Проверяем, подходит ли комбинация под ВСЕ условия
+                let isValid = true;
+                for (let cond of conds) {
+                    let matchCount = 0;
+                    for (let card of combo) {
+                        const parts = card.split('_');
+                        if (cond.type === 'suit' && parts[1] === cond.value) matchCount++;
+                        if (cond.type === 'rank' && parts[0] === cond.value) matchCount++;
+                    }
+                    if (matchCount !== cond.count) {
+                        isValid = false;
+                        break;
+                    }
+                }
+                if (isValid) count++;
+                return;
+            }
+            for (let i = start; i < deck.length; i++) {
+                combo.push(deck[i]);
+                generateCombinations(i + 1, combo);
+                combo.pop();
+            }
+        };
+
+        generateCombinations(0, []);
+        return count;
     }
 
     // --- XML ГЕНЕРАТОР ---
@@ -305,7 +353,7 @@ export class CardGenerator extends BaseGeneratorUI {
         if (this.conditions.length > 0) {
             xml += `    <func type="Intersect">\n`;
             this.conditions.forEach(cond => {
-                const xmlType = cond.type === 'suit' ? 'SuitFilter' : 'CardFilter'; // Можно адаптировать под вашу Java-логику
+                const xmlType = cond.type === 'suit' ? 'SuitFilter' : 'CardFilter'; 
                 xml += `      <func type="${xmlType}" value="${cond.value}" count="${cond.count}" />\n`;
             });
             xml += `    </func>\n`;
