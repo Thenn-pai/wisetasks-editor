@@ -15,8 +15,10 @@ document.addEventListener('DOMContentLoaded', () => {
             } else if (selectedTask === 'word') {
                 modulePath = './src/ru/spb/ipo/generator/word/WordGenerator.js';
                 className = 'WordGenerator';
+            } else if (selectedTask === 'numbers') {
+                modulePath = './src/ru/spb/ipo/generator/numbers/NumbersGenerator.js';
+                className = 'NumbersGenerator';
             }
-            // Позже сюда добавим word, numbers и остальные...
 
             if (modulePath) {
                 const module = await import(modulePath);
@@ -36,9 +38,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // При выборе в меню - загружаем модуль
     generatorSelect.addEventListener('change', (e) => loadGenerator(e.target.value));
 
-    // Автоматически запускаем Карты при старте сайта!
     loadGenerator('cards');
 });
