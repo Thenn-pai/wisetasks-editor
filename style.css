@@ -1,17 +1,14 @@
-:root {
-    --bg-color: #1e1e1e;
-    --panel-bg: #252526;
-    --text-color: #cccccc;
-    --accent-color: #007acc;
-    --border-color: #333333;
-    --xml-text: #ce9178;
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
 }
 
 body {
-    margin: 0;
-    font-family: 'Segoe UI', sans-serif;
-    background-color: var(--bg-color);
-    color: var(--text-color);
+    font-family: 'Montserrat', sans-serif; 
+    /* Тот самый красивый темный градиент */
+    background: linear-gradient(135deg, #0f172a 0%, #1e1e1e 100%);
+    color: #e0e0e0;
     display: flex;
     flex-direction: column;
     height: 100vh;
@@ -19,70 +16,59 @@ body {
 }
 
 .header {
-    background-color: var(--panel-bg);
-    padding: 10px 20px;
-    border-bottom: 1px solid var(--border-color);
     display: flex;
     justify-content: space-between;
     align-items: center;
+    background-color: rgba(15, 23, 42, 0.8);
+    backdrop-filter: blur(10px);
+    padding: 15px 30px;
+    border-bottom: 1px solid #333;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+}
+
+.header h1 {
+    font-size: 1.4rem;
+    font-weight: 700;
+    background: linear-gradient(90deg, #64b5f6, #ba68c8);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
 }
 
 .btn {
-    background-color: var(--accent-color);
+    padding: 8px 16px;
+    background-color: #007acc;
     color: white;
     border: none;
-    padding: 8px 16px;
-    border-radius: 4px;
+    border-radius: 6px;
     cursor: pointer;
-    font-size: 0.9rem;
+    font-weight: 500;
+    transition: all 0.2s ease;
 }
 
-.main-container {
-    display: flex;
-    flex: 1;
-    overflow: hidden;
-}
-
-.sidebar {
-    width: 300px;
-    background-color: var(--panel-bg);
-    border-right: 1px solid var(--border-color);
-    padding: 15px;
-    overflow-y: auto;
+.btn:hover {
+    opacity: 0.9;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
 }
 
 .workspace {
     flex: 1;
-    padding: 20px;
-    background-color: #1a1a1a;
-    overflow-y: auto; 
-}
-.xml-output {
-    height: 300px;
-    background-color: var(--panel-bg);
-    border-top: 1px solid var(--border-color);
-    padding: 10px;
-    display: flex;
-    flex-direction: column;
+    padding: 30px;
+    overflow-y: auto;
 }
 
-#xml-editor {
-    flex: 1;
-    background-color: #1e1e1e;
-    color: var(--xml-text);
-    border: 1px solid var(--border-color);
-    padding: 15px;
-    font-family: monospace;
-    font-size: 13px;
-    resize: none;
+.footer {
+    text-align: center; 
+    padding: 15px; 
+    color: #555; 
+    font-size: 12px; 
+    font-weight: 500;
+    background: rgba(0,0,0,0.2); 
+    border-top: 1px solid rgba(255,255,255,0.05);
 }
 
-#task-tree { list-style: none; padding-left: 5px; }
-.tree-node {
-    cursor: pointer;
-    padding: 4px 8px;
-    border-radius: 3px;
-}
-.tree-node.selected { background-color: var(--accent-color); color: white; }
-
-ul { list-style: none; padding-left: 18px; border-left: 1px solid #3c3c3c; margin-left: 8px; }
+/* Кастомный красивый ползунок скролла */
+::-webkit-scrollbar { width: 8px; }
+::-webkit-scrollbar-track { background: rgba(0,0,0,0.1); }
+::-webkit-scrollbar-thumb { background: #4a627a; border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: #64b5f6; }

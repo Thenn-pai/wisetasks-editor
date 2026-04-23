@@ -3,15 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Wisetasks Editor</title>
+    <title>Wisetasks | Конструктор задач</title>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <header class="header">
-        <h1>Wisetasks Web Editor</h1>
+        <h1>Wisetasks <span style="font-weight: 400; color: #888;">Education</span></h1>
         <div class="toolbar">
-            <select id="generator-select" class="btn" style="background-color: #333; border: 1px solid #555; margin-right: 15px; font-family: inherit;">
-                <option value="base">Основной редактор задач</option>
+            <select id="generator-select" class="btn" style="background-color: #2c3e50; border: 1px solid #4a627a; font-family: inherit; font-size: 14px; padding: 10px;">
                 <option value="cards">Генератор "Карты"</option>
                 <option value="word">Генератор "Работа со словами"</option>
                 <option value="numbers">Генератор "Работа с числами"</option>
@@ -20,33 +20,20 @@
                 <option value="digits">Генератор "Делимости / Остатки"</option>
                 <option value="chess">Генератор "Шахматы"</option>
             </select>
-
-            <button id="btn-add-function" class="btn">Добавить функцию</button>
-            <button id="btn-add-set" class="btn">Добавить множество</button>
         </div>
     </header>
-
-    <div class="main-container">
-        <aside class="sidebar">
-            <h3>Дерево задачи</h3>
-            <div id="tree-container">
-                <ul id="task-tree"></ul>
-            </div>
-        </aside>
-
-        <main class="workspace">
-            <h3>Свойства элемента</h3>
-            <div id="properties-panel">
-                <p class="placeholder-text">Выберите элемент в дереве для редактирования</p>
-            </div>
-        </main>
+    
+    <div class="main-container" style="display: flex; flex-direction: column; flex: 1; overflow: hidden;">
+        <div id="properties-panel" class="workspace">
+            <p style="text-align: center; color: #888; margin-top: 50px;">Загрузка модуля...</p>
+        </div>
+        
+        <footer class="footer">
+            Разработано студентами факультета компьютерной безопасности<br>
+            Санкт-Петербургского государственного электротехнического университета «ЛЭТИ» им. В.И. Ульянова (Ленина)
+        </footer>
     </div>
-
-    <footer class="xml-output">
-        <h3>Сгенерированный XML</h3>
-        <textarea id="xml-editor" readonly placeholder="Здесь появится XML код..."></textarea>
-    </footer>
-
+    
     <script type="module" src="main.js"></script>
 </body>
 </html>
