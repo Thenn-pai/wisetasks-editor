@@ -4,8 +4,12 @@ export class ChessGenerator extends BaseGeneratorUI {
     constructor() {
         super();
         this.pieces = {
-            'rook': { name: 'Ладья', symbol: '♜' },
-            'any': { name: 'Произвольная фигура', symbol: '♟' }
+            'any': { name: 'Произвольная фигура', symbol: '♟', color: '#cbd5e1' },
+            'rook': { name: 'Ладья', symbol: '♜', color: '#60a5fa' },
+            'bishop': { name: 'Слон', symbol: '♝', color: '#a78bfa' },
+            'knight': { name: 'Конь', symbol: '♞', color: '#f472b6' },
+            'queen': { name: 'Ферзь', symbol: '♛', color: '#f59e0b' },
+            'king': { name: 'Король', symbol: '♚', color: '#10b981' }
         };
     }
 
@@ -31,18 +35,22 @@ export class ChessGenerator extends BaseGeneratorUI {
                         
                         <div style="margin-bottom: 15px; font-size: 13px; line-height: 1.5; color: #cbd5e1;">
                             <strong style="color: white;">Шаг 1: Размер доски</strong><br>
-                            Классическая доска имеет размер 8x8, но в комбинаторике часто используют нестаطартные доски (например, N x M).
+                            Укажите ширину (N) и высоту (M) доски.
                         </div>
                         
                         <div style="margin-bottom: 15px; font-size: 13px; line-height: 1.5; color: #cbd5e1;">
                             <strong style="color: white;">Шаг 2: Фигуры</strong><br>
-                            Укажите количество фигур (k), которые нужно расставить на доске.
+                            Выберите тип шахматной фигуры и их количество (k).
                         </div>
                         
                         <div style="margin-bottom: 15px; font-size: 13px; line-height: 1.5; color: #cbd5e1;">
                             <strong style="color: white;">Шаг 3: Ограничения</strong><br>
-                            <b>Мирное сосуществование:</b> Фигуры просто стоят на клетках (не более 1 на клетку).<br>
-                            <b>Не бьют друг друга (Ладьи):</b> Классическая задача, где ладьи не должны находиться на одной вертикали или горизонтали.
+                            Если включен режим "не бьют друг друга", алгоритм использует правила классических шахмат:<br>
+                            • <b>Ладьи:</b> прямые линии<br>
+                            • <b>Слоны:</b> диагонали<br>
+                            • <b>Кони:</b> ход буквой Г<br>
+                            • <b>Ферзи:</b> прямые + диагонали<br>
+                            • <b>Короли:</b> соседние клетки
                         </div>
                     </div>
                 </div>
@@ -67,10 +75,9 @@ export class ChessGenerator extends BaseGeneratorUI {
                                 
                                 <div style="display: flex; gap: 10px; align-items: center; margin-bottom: 15px;">
                                     <span style="color: #cbd5e1;">Ставим:</span>
-                                    <input type="number" id="piece-k" value="5" min="1" max="64" style="width: 70px; padding: 8px; background: #1e293b; color: white; border: 1px solid #475569; border-radius: 6px;">
+                                    <input type="number" id="piece-k" value="8" min="1" max="64" style="width: 70px; padding: 8px; background: #1e293b; color: white; border: 1px solid #475569; border-radius: 6px;">
                                     <select id="piece-type" style="padding: 8px; background: #1e293b; color: white; border: 1px solid #475569; border-radius: 6px;">
-                                        <option value="rook">Ладей (♜)</option>
-                                        <option value="any">Фигур (♟)</option>
+                                        ${Object.entries(this.pieces).map(([k, v]) => `<option value="${k}">${v.name} (${v.symbol})</option>`).join('')}
                                     </select>
                                 </div>
 
@@ -110,7 +117,6 @@ export class ChessGenerator extends BaseGeneratorUI {
         const inputN = container.querySelector('#board-n');
         const inputM = container.querySelector('#board-m');
         
-        // Динамическая перерисовка доски
         inputN.addEventListener('input', () => this.renderBoard(container));
         inputM.addEventListener('input', () => this.renderBoard(container));
 
@@ -128,14 +134,13 @@ export class ChessGenerator extends BaseGeneratorUI {
         board.style.gridTemplateColumns = `repeat(${N}, 1fr)`;
         board.innerHTML = '';
         
-        const cellSize = Math.floor(240 / Math.max(N, M)); // Автомасштаб клеток
+        const cellSize = Math.floor(240 / Math.max(N, M));
 
         for (let i = 0; i < M; i++) {
             for (let j = 0; j < N; j++) {
                 const cell = document.createElement('div');
                 cell.style.width = `${cellSize}px`;
                 cell.style.height = `${cellSize}px`;
-                // Классическая шахматная раскраска
                 const isBlack = (i + j) % 2 !== 0;
                 cell.style.backgroundColor = isBlack ? '#475569' : '#cbd5e1';
                 board.appendChild(cell);
@@ -151,13 +156,20 @@ export class ChessGenerator extends BaseGeneratorUI {
         const noAttack = container.querySelector('#cond-attack').checked;
         const textBox = container.querySelector('#problem-text');
         
-        let pName = pType === 'rook' ? 'ладей' : 'одинаковых фигур';
+        let pName = this.pieces[pType].name;
+        // Склонение
+        if (pType === 'rook') pName = 'ладей';
+        else if (pType === 'bishop') pName = 'слонов';
+        else if (pType === 'knight') pName = 'коней';
+        else if (pType === 'queen') pName = 'ферзей';
+        else if (pType === 'king') pName = 'королей';
+        else pName = 'одинаковых фигур';
 
         let text = `Имеется шахматная доска размером <b>${N}x${M}</b>. На ней необходимо расставить <b>${K}</b> ${pName}.<br>`;
         text += `Подсчитайте количество способов расстановки, при условии, что в одной клетке может стоять не более одной фигуры`;
         
-        if (noAttack) {
-            text += `, и фигуры <b>не должны бить друг друга</b> (не могут находиться на одной горизонтали или вертикали).`;
+        if (noAttack && pType !== 'any') {
+            text += `, и фигуры <b>не должны бить друг друга</b> по классическим правилам шахмат.`;
         } else {
             text += `. Дополнительных ограничений нет.`;
         }
@@ -188,22 +200,21 @@ export class ChessGenerator extends BaseGeneratorUI {
         log += `Количество фигур (k) = ${K}<br><br>`;
 
         if (!noAttack || pType === 'any') {
-            // Простая комбинаторика
             const ways = this.combinations(totalCells, K);
             log += `<b style="color:#f59e0b;">Произвольная расстановка:</b><br>`;
-            log += `Так как фигуры не бьют друг друга (или это произвольные фигуры), задача сводится к выбору ${K} уникальных клеток из ${totalCells}.<br>`;
+            log += `Так как фигуры не бьют друг друга (или это пешки без хода), задача сводится к выбору ${K} уникальных клеток из ${totalCells}.<br>`;
             log += `Формула: C(${totalCells}, ${K}) = <b>${ways}</b><br><br>`;
             log += `<strong style="color:#10b981; font-size:18px;">Итоговый ответ: ${ways} способов.</strong>`;
             solutionText.innerHTML = log;
             return;
         }
 
-        // Задача о небьющих ладьях
+        // --- ТОЧНЫЙ АНАЛИТИЧЕСКИЙ РАСЧЕТ ДЛЯ ЛАДЕЙ ---
         if (pType === 'rook' && noAttack) {
-            log += `<b style="color:#f59e0b;">Задача о небьющих ладьях:</b><br>`;
+            log += `<b style="color:#f59e0b;">Задача о небьющих ладьях (Аналитика):</b><br>`;
             
             if (K > N || K > M) {
-                log += `Две ладьи бьют друг друга, если стоят на одной линии. Так как мы ставим ${K} ладей, а линий всего ${N}х${M}, расстановка невозможна (Принцип Дирихле).<br><br>`;
+                log += `Две ладьи бьют друг друга, если стоят на одной линии. Так как мы ставим ${K} ладей, а линий всего ${Math.min(N, M)}, расстановка невозможна (Принцип Дирихле).<br><br>`;
                 log += `<strong style="color:#ef4444; font-size:18px;">Итоговый ответ: 0 способов.</strong>`;
                 solutionText.innerHTML = log;
                 return;
@@ -214,14 +225,84 @@ export class ChessGenerator extends BaseGeneratorUI {
             const permutations = this.fact(K);
             const totalWays = chooseCols * chooseRows * permutations;
 
-            log += `Чтобы ладьи не били друг друга, каждая должна стоять в уникальной строке и уникальном столбце.<br><br>`;
             log += `1. Выбираем ${K} столбцов из ${N}: C(${N}, ${K}) = <b>${chooseCols}</b><br>`;
             log += `2. Выбираем ${K} строк из ${M}: C(${M}, ${K}) = <b>${chooseRows}</b><br>`;
-            log += `3. Расставляем ладьи на пересечении (количество перестановок): ${K}! = <b>${permutations}</b><br><br>`;
-            
-            log += `Формула: C(N, k) * C(M, k) * k! = ${chooseCols} * ${chooseRows} * ${permutations} = <b>${totalWays}</b><br><br>`;
+            log += `3. Расставляем ладьи на пересечении (перестановки): ${K}! = <b>${permutations}</b><br><br>`;
+            log += `Формула: C(${N}, ${K}) * C(${M}, ${K}) * ${K}! = <b>${totalWays}</b><br><br>`;
             log += `<strong style="color:#10b981; font-size:18px;">Итоговый ответ: ${totalWays} способов.</strong>`;
             solutionText.innerHTML = log;
+            return;
         }
+
+        // --- DFS ПЕРЕБОР ДЛЯ ОСТАЛЬНЫХ ФИГУР ---
+        log += `<b style="color:#f59e0b;">Задача о небьющих фигурах (${this.pieces[pType].name}):</b><br>`;
+        log += `Алгоритм строит дерево поиска в глубину (DFS) с отсечением ветвей по правилу хода фигуры...<br><br>`;
+
+        // Защита от долгого зависания на огромных досках с Ферзями
+        if (totalCells > 64 && K > 6) {
+            log += `<i style="color:#94a3b8;">Идет вычисление... (может занять пару секунд)</i><br><br>`;
+        }
+
+        // Запускаем асинхронно, чтобы не "вешать" интерфейс, но для простоты кода сделаем через setTimeout
+        setTimeout(() => {
+            const exactCount = this.calculateChessDFS(N, M, K, pType);
+            
+            if (exactCount === 0) {
+                 log += `<strong style="color:#ef4444; font-size:16px;">Ответ: 0 способов.</strong><br>Невозможно расставить столько фигур так, чтобы они не били друг друга.`;
+            } else {
+                 log += `<strong style="color:#10b981; font-size:18px;">Итоговый точный ответ: ${exactCount} способов.</strong>`;
+            }
+            solutionText.innerHTML = log;
+        }, 10);
+    }
+
+    calculateChessDFS(N, M, K, pType) {
+        let count = 0;
+        const totalCells = N * M;
+        const placed = []; // Храним {x, y}
+
+        const isSafe = (x, y) => {
+            for (let i = 0; i < placed.length; i++) {
+                const px = placed[i].x;
+                const py = placed[i].y;
+                const dx = Math.abs(px - x);
+                const dy = Math.abs(py - y);
+
+                if (pType === 'bishop') {
+                    if (dx === dy) return false;
+                } else if (pType === 'knight') {
+                    if ((dx === 2 && dy === 1) || (dx === 1 && dy === 2)) return false;
+                } else if (pType === 'queen') {
+                    if (dx === 0 || dy === 0 || dx === dy) return false;
+                } else if (pType === 'king') {
+                    if (dx <= 1 && dy <= 1) return false;
+                }
+            }
+            return true;
+        };
+
+        const dfs = (startIndex) => {
+            if (placed.length === K) {
+                count++;
+                return;
+            }
+
+            // Отсечение: если оставшихся клеток меньше, чем нужно фигур - смысла идти дальше нет
+            if (totalCells - startIndex < K - placed.length) return;
+
+            for (let i = startIndex; i < totalCells; i++) {
+                const x = i % N; // Колонка
+                const y = Math.floor(i / N); // Строка
+
+                if (isSafe(x, y)) {
+                    placed.push({x, y});
+                    dfs(i + 1); // Следующую фигуру ставим строго ПОСЛЕ текущей (чтобы избежать дублей)
+                    placed.pop();
+                }
+            }
+        };
+
+        dfs(0);
+        return count;
     }
 }
