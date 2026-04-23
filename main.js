@@ -12,6 +12,9 @@ document.addEventListener('DOMContentLoaded', () => {
             if (selectedTask === 'cards') {
                 modulePath = './src/ru/spb/ipo/generator/cards/CardGenerator.js';
                 className = 'CardGenerator';
+            } else if (selectedTask === 'word') {
+                modulePath = './src/ru/spb/ipo/generator/word/WordGenerator.js';
+                className = 'WordGenerator';
             }
             // Позже сюда добавим word, numbers и остальные...
 
