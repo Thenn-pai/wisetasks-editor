@@ -40,7 +40,7 @@ export class SolverGenerator extends BaseGeneratorUI {
 
             expr = expr.replace(/\^/g, '**');
 
-            const safeExpr = expr.replace(/[^0-9+\-*/().]/g, '');
+            const safeExpr = expr.replace(/[^0-9+\-*/().e]/g, '');
             if (!safeExpr) return null;
 
             let openBrackets = (safeExpr.match(/\(/g) || []).length;
