@@ -40,10 +40,18 @@ export class SolverGenerator extends BaseGeneratorUI {
 
             expr = expr.replace(/\^/g, '**');
 
-            const safeExpr = expr.replace(/[^0-9+\-*/().*]/g, '');
+            const safeExpr = expr.replace(/[^0-9+\-*/().]/g, '');
             if (!safeExpr) return null;
 
-            return new Function('return ' + safeExpr)();
+            let openBrackets = (safeExpr.match(/\(/g) || []).length;
+            let closeBrackets = (safeExpr.match(/\)/g) || []).length;
+            let balancedExpr = safeExpr;
+            while (openBrackets > closeBrackets) {
+                balancedExpr += ')';
+                closeBrackets++;
+            }
+
+            return new Function('return ' + balancedExpr)();
         } catch (e) {
             return null;
         }
@@ -270,7 +278,7 @@ export class SolverGenerator extends BaseGeneratorUI {
             const userValue = this.evaluateUserAnswer(userAnswer);
             const expectedValue = parseFloat(expectedText);
 
-            if (userValue !== null && !isNaN(expectedValue) && userValue === expectedValue) {
+            if (userValue !== null && !isNaN(expectedValue) && Math.round(userValue) === Math.round(expectedValue)) {
                 isMatch = true;
             }
         }
