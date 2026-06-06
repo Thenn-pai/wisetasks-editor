@@ -241,7 +241,7 @@ export class WordGenerator extends BaseGeneratorUI {
         btn.style.backgroundColor = '#f59e0b';
         btn.disabled = true;
 
-        const worker = new Worker('./wordWorker.js');
+        const worker = new Worker(new URL('./wordWorker.js', import.meta.url));
 
         worker.onmessage = (e) => {
             const exactCount = e.data;
