@@ -245,7 +245,16 @@ export class WordGenerator extends BaseGeneratorUI {
 
         worker.onmessage = (e) => {
             const exactCount = e.data;
-            
+
+            if (exactCount && exactCount.error) {
+                alert("Ошибка в воркере: " + exactCount.error);
+                btn.textContent = 'Создать задачу';
+                btn.style.backgroundColor = '#10b981';
+                btn.disabled = false;
+                worker.terminate();
+                return;
+            }
+
             this.saveTask({
                 title: `Слова: k = ${K}`,
                 descriptionHtml: text,
@@ -253,11 +262,11 @@ export class WordGenerator extends BaseGeneratorUI {
                 answerText: exactCount.toString(),
                 category: this.pageTitle
             });
-            
+
             btn.textContent = 'Создать задачу';
             btn.style.backgroundColor = '#10b981';
             btn.disabled = false;
-            
+
             alert("Задача успешно сгенерирована и добавлена в раздел «Решение задач»!");
             worker.terminate();
         };
