@@ -138,18 +138,7 @@ export class CardGenerator extends BaseGeneratorUI {
 
         container.querySelector('#generate-xml-btn').onclick = () => {
             this.generateProblemText(container);
-            if (this.solveMath(container)) {
-                if (this.currentAnswer) {
-                    this.saveTask({
-                        title: this.currentTitle,
-                        descriptionHtml: this.currentDescription,
-                        solutionHtml: '',
-                        answerText: this.currentAnswer,
-                        category: this.pageTitle
-                    });
-                    alert("Задача успешно сгенерирована и добавлена в раздел «Решение задач»!");
-                }
-            }
+            this.solveMathAndSave(container);
         };
     }
 
@@ -254,71 +243,78 @@ export class CardGenerator extends BaseGeneratorUI {
         this.currentDescription = text;
     }
 
-    solveMath(container) {
+    solveMathAndSave(container) {
+        const btn = container.querySelector('#generate-xml-btn');
+        if (btn.disabled) return;
+
         const N = this.selectedCards.length;
         const K = parseInt(container.querySelector('#combo-k').value);
 
         if (isNaN(K) || K < 1) {
             alert("Ошибка валидации: Размер выборки (k) должен быть положительным числом.");
-            return false;
+            return;
         }
 
         if (N === 0) {
             alert("Ошибка валидации: Колода пуста. Добавьте карты.");
-            return false;
+            return;
         }
 
         if (K > N) {
             alert(`Ошибка валидации: Нельзя вытянуть ${K} карт из колоды в ${N} карт.`);
-            return false;
+            return;
         }
 
         if (this.conditions.length === 0) {
-            this.currentAnswer = `${this.combinations(N, K)}`;
-            return true;
+            this.saveTask({
+                title: this.currentTitle,
+                descriptionHtml: this.currentDescription,
+                solutionHtml: '',
+                answerText: `${this.combinations(N, K)}`,
+                category: this.pageTitle
+            });
+            alert("Задача успешно сгенерирована и добавлена в раздел «Решение задач»!");
+            return;
         }
 
         if (this.combinations(N, K) > 5000000) {
             alert("Ошибка валидации: Комбинаторный взрыв. Количество вариантов слишком велико для расчета с условиями. Пожалуйста, уменьшите 'k' или размер колоды.");
-            return false;
+            return;
         }
 
-        const exactCount = this.calculateExactCombinations(K);
-        this.currentAnswer = `${exactCount}`;
-        return true;
-    }
+        btn.textContent = 'Идет расчет...';
+        btn.style.backgroundColor = '#f59e0b';
+        btn.disabled = true;
 
-    calculateExactCombinations(K) {
-        let count = 0;
-        const deck = this.selectedCards;
-        const conds = this.conditions;
+        const worker = new Worker('./cardWorker.js');
 
-        const generateCombinations = (start, combo) => {
-            if (combo.length === K) {
-                let isValid = true;
-                for (let cond of conds) {
-                    let matchCount = 0;
-                    for (let card of combo) {
-                        const parts = card.split('_');
-                        if (cond.type === 'suit' && parts[1] === cond.value) matchCount++;
-                        if (cond.type === 'rank' && parts[0] === cond.value) matchCount++;
-                    }
-                    if (matchCount !== cond.count) {
-                        isValid = false;
-                        break;
-                    }
-                }
-                if (isValid) count++;
-                return;
-            }
-            for (let i = start; i < deck.length; i++) {
-                combo.push(deck[i]);
-                generateCombinations(i + 1, combo);
-                combo.pop();
-            }
+        worker.onmessage = (e) => {
+            const exactCount = e.data;
+            
+            this.saveTask({
+                title: this.currentTitle,
+                descriptionHtml: this.currentDescription,
+                solutionHtml: '',
+                answerText: exactCount.toString(),
+                category: this.pageTitle
+            });
+            
+            btn.textContent = 'Создать задачу';
+            btn.style.backgroundColor = '#10b981';
+            btn.disabled = false;
+            
+            alert("Задача успешно сгенерирована и добавлена в раздел «Решение задач»!");
+            worker.terminate();
         };
 
-        generateCombinations(0, []);
-        return count;
+        worker.onerror = (error) => {
+            alert("Произошла ошибка при вычислениях в фоновом потоке.");
+            btn.textContent = 'Создать задачу';
+            btn.style.backgroundColor = '#10b981';
+            btn.disabled = false;
+            worker.terminate();
+        };
+
+        worker.postMessage({ K, deck: this.selectedCards, conds: this.conditions });
     }
 }
