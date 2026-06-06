@@ -108,6 +108,10 @@ export class WordGenerator extends BaseGeneratorUI {
             for (let char of val) {
                 if (!this.alphabet.includes(char)) this.alphabet.push(char);
             }
+            if (this.alphabet.length > 33) {
+                 this.alphabet = this.alphabet.slice(0, 33);
+                 alert("Алфавит ограничен 33 символами.");
+            }
             input.value = '';
             this.alphabet.sort();
             this.updateAlphabetDisplay(container);
@@ -189,13 +193,18 @@ export class WordGenerator extends BaseGeneratorUI {
         const N = this.alphabet.length;
         const K = parseInt(container.querySelector('#word-k').value);
 
+        if (isNaN(K) || K < 1) {
+            alert("Ошибка валидации: Длина слова должна быть числом больше 0.");
+            return;
+        }
+
         if (N === 0) {
-            alert("Ошибка: Алфавит пуст! Добавьте буквы.");
+            alert("Ошибка валидации: Алфавит пуст! Добавьте буквы.");
             return;
         }
 
         if (!this.allowRepeats && K > N) {
-            alert(`Ошибка: Нельзя составить слово длины ${K} из ${N} уникальных букв без повторений.`);
+            alert(`Ошибка валидации: Нельзя составить слово длины ${K} из ${N} уникальных букв без повторений.`);
             return;
         }
 
@@ -221,6 +230,13 @@ export class WordGenerator extends BaseGeneratorUI {
                 category: this.pageTitle
             });
             alert("Задача успешно сгенерирована и добавлена в раздел «Решение задач»!");
+            return;
+        }
+
+        let totalCombinations = this.allowRepeats ? Math.pow(N, K) : (this.fact(N) / this.fact(N - K));
+        
+        if (totalCombinations > 5000000) {
+            alert("Ошибка валидации: Комбинаторный взрыв. Количество вариантов (более 5 млн) слишком велико для расчета алгоритмом поиска. Пожалуйста, уменьшите 'k' или размер алфавита.");
             return;
         }
 

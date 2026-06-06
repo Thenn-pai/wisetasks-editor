@@ -148,6 +148,17 @@ export class NumbersGenerator extends BaseGeneratorUI {
     generateAndSaveTask(container) {
         const maxD = parseInt(container.querySelector('#max-digit').value);
         const K = parseInt(container.querySelector('#set-size').value);
+        
+        if (isNaN(maxD) || maxD < 1 || maxD > 9) {
+            alert("Ошибка валидации: Максимальная цифра должна быть от 1 до 9.");
+            return;
+        }
+
+        if (isNaN(K) || K < 1 || K > 15) {
+            alert("Ошибка валидации: Размер набора (k) должен быть от 1 до 15.");
+            return;
+        }
+
         const M = maxD + 1;
 
         let text = `Имеется набор цифр от <b>0</b> до <b>${maxD}</b>. Подсчитайте количество возможных упорядоченных числовых наборов длины <b>${K}</b>.`;
@@ -161,6 +172,7 @@ export class NumbersGenerator extends BaseGeneratorUI {
         }
 
         let ans = 0;
+        let useDFS = false;
 
         if (this.conditions.length === 0) {
             ans = Math.pow(M, K);
@@ -202,9 +214,17 @@ export class NumbersGenerator extends BaseGeneratorUI {
                 }
             }
             else {
-                 ans = this.calculateDFS(maxD, K);
+                useDFS = true;
             }
         } else {
+            useDFS = true;
+        }
+
+        if (useDFS) {
+            if (Math.pow(M, K) > 5000000) {
+                alert("Ошибка валидации: Комбинаторный взрыв. Количество вариантов слишком велико для расчета алгоритмом поиска. Пожалуйста, уменьшите 'k'.");
+                return;
+            }
             ans = this.calculateDFS(maxD, K);
         }
 

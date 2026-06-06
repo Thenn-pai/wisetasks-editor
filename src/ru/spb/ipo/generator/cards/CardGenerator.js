@@ -127,6 +127,11 @@ export class CardGenerator extends BaseGeneratorUI {
             const name = container.querySelector('#cond-value').options[container.querySelector('#cond-value').selectedIndex].text;
             const count = parseInt(container.querySelector('#cond-count').value);
 
+            if (isNaN(count) || count < 0) {
+                alert("Ошибка валидации: Количество карт в условии должно быть положительным числом.");
+                return;
+            }
+
             this.conditions.push({ type, value: val, name, count });
             this.renderConditions();
         };
@@ -253,14 +258,29 @@ export class CardGenerator extends BaseGeneratorUI {
         const N = this.selectedCards.length;
         const K = parseInt(container.querySelector('#combo-k').value);
 
+        if (isNaN(K) || K < 1) {
+            alert("Ошибка валидации: Размер выборки (k) должен быть положительным числом.");
+            return false;
+        }
+
         if (N === 0) {
-            alert("Ошибка: Колода пуста. Добавьте карты.");
+            alert("Ошибка валидации: Колода пуста. Добавьте карты.");
+            return false;
+        }
+
+        if (K > N) {
+            alert(`Ошибка валидации: Нельзя вытянуть ${K} карт из колоды в ${N} карт.`);
             return false;
         }
 
         if (this.conditions.length === 0) {
             this.currentAnswer = `${this.combinations(N, K)}`;
             return true;
+        }
+
+        if (this.combinations(N, K) > 5000000) {
+            alert("Ошибка валидации: Комбинаторный взрыв. Количество вариантов слишком велико для расчета с условиями. Пожалуйста, уменьшите 'k' или размер колоды.");
+            return false;
         }
 
         const exactCount = this.calculateExactCombinations(K);

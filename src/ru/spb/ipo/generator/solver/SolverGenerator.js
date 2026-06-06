@@ -27,31 +27,90 @@ export class SolverGenerator extends BaseGeneratorUI {
             let expr = input.replace(/\s+/g, '').toLowerCase();
             
             expr = expr.replace(/[cс]\((\d+),(\d+)\)/g, (match, n, k) => {
-                return this.combinations(parseInt(n, 10), parseInt(k, 10));
+                return this.combinations(parseInt(n, 10), parseInt(k, 10)).toString();
             });
 
             expr = expr.replace(/[aа]\((\d+),(\d+)\)/g, (match, n, k) => {
-                return this.permutations(parseInt(n, 10), parseInt(k, 10));
+                return this.permutations(parseInt(n, 10), parseInt(k, 10)).toString();
             });
 
-            expr = expr.replace(/(\d+)!/g, (match, num) => {
-                return this.fact(parseInt(num, 10));
-            });
+            const tokens = [];
+            let numberBuffer = [];
+            for (let i = 0; i < expr.length; i++) {
+                const char = expr[i];
+                if (/\d/.test(char) || char === '.') {
+                    numberBuffer.push(char);
+                } else {
+                    if (numberBuffer.length > 0) {
+                        tokens.push(numberBuffer.join(''));
+                        numberBuffer = [];
+                    }
+                    if ('+-*/^!()'.includes(char)) {
+                        tokens.push(char);
+                    }
+                }
+            }
+            if (numberBuffer.length > 0) tokens.push(numberBuffer.join(''));
 
-            expr = expr.replace(/\^/g, '**');
+            const precedence = { '+': 1, '-': 1, '*': 2, '/': 2, '^': 3, '!': 4 };
+            const outputQueue = [];
+            const operatorStack = [];
 
-            const safeExpr = expr.replace(/[^0-9+\-*/().e]/g, '');
-            if (!safeExpr) return null;
-
-            let openBrackets = (safeExpr.match(/\(/g) || []).length;
-            let closeBrackets = (safeExpr.match(/\)/g) || []).length;
-            let balancedExpr = safeExpr;
-            while (openBrackets > closeBrackets) {
-                balancedExpr += ')';
-                closeBrackets++;
+            for (const token of tokens) {
+                if (!isNaN(parseFloat(token))) {
+                    outputQueue.push(parseFloat(token));
+                } else if (token === '!') {
+                    outputQueue.push(token);
+                } else if (token === '(') {
+                    operatorStack.push(token);
+                } else if (token === ')') {
+                    while (operatorStack.length > 0 && operatorStack[operatorStack.length - 1] !== '(') {
+                        outputQueue.push(operatorStack.pop());
+                    }
+                    if (operatorStack.length > 0 && operatorStack[operatorStack.length - 1] === '(') {
+                        operatorStack.pop();
+                    }
+                } else if ('+-*/^'.includes(token)) {
+                    while (
+                        operatorStack.length > 0 &&
+                        operatorStack[operatorStack.length - 1] !== '(' &&
+                        precedence[operatorStack[operatorStack.length - 1]] >= precedence[token]
+                    ) {
+                        outputQueue.push(operatorStack.pop());
+                    }
+                    operatorStack.push(token);
+                }
             }
 
-            return new Function('return ' + balancedExpr)();
+            while (operatorStack.length > 0) {
+                outputQueue.push(operatorStack.pop());
+            }
+
+            const evalStack = [];
+            for (const token of outputQueue) {
+                if (!isNaN(parseFloat(token))) {
+                    evalStack.push(parseFloat(token));
+                } else if (token === '!') {
+                    if (evalStack.length < 1) return null;
+                    const a = evalStack.pop();
+                    evalStack.push(this.fact(a));
+                } else {
+                    if (evalStack.length < 2) return null;
+                    const b = evalStack.pop();
+                    const a = evalStack.pop();
+                    
+                    switch (token) {
+                        case '+': evalStack.push(a + b); break;
+                        case '-': evalStack.push(a - b); break;
+                        case '*': evalStack.push(a * b); break;
+                        case '/': evalStack.push(a / b); break;
+                        case '^': evalStack.push(Math.pow(a, b)); break;
+                    }
+                }
+            }
+
+            return evalStack.length === 1 ? evalStack[0] : null;
+
         } catch (e) {
             return null;
         }

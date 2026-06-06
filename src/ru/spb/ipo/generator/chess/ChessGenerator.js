@@ -51,9 +51,9 @@ export class ChessGenerator extends BaseGeneratorUI {
                                 <label style="display:block; margin-bottom: 15px; color: #60a5fa; font-weight: 600;">Параметры доски:</label>
                                 <div style="display: flex; gap: 15px; align-items: center;">
                                     <span style="color: #cbd5e1;">Горизонталь (N):</span>
-                                    <input type="number" id="board-n" value="8" min="2" max="12" style="width: 70px; padding: 8px; background: #1e293b; color: white; border: 1px solid #475569; border-radius: 6px;">
+                                    <input type="number" id="board-n" value="8" min="2" max="8" style="width: 70px; padding: 8px; background: #1e293b; color: white; border: 1px solid #475569; border-radius: 6px;">
                                     <span style="color: #cbd5e1;">Вертикаль (M):</span>
-                                    <input type="number" id="board-m" value="8" min="2" max="12" style="width: 70px; padding: 8px; background: #1e293b; color: white; border: 1px solid #475569; border-radius: 6px;">
+                                    <input type="number" id="board-m" value="8" min="2" max="8" style="width: 70px; padding: 8px; background: #1e293b; color: white; border: 1px solid #475569; border-radius: 6px;">
                                 </div>
                             </div>
 
@@ -105,8 +105,8 @@ export class ChessGenerator extends BaseGeneratorUI {
     }
 
     renderBoard(container) {
-        const N = Math.min(Math.max(parseInt(container.querySelector('#board-n').value) || 8, 2), 12);
-        const M = Math.min(Math.max(parseInt(container.querySelector('#board-m').value) || 8, 2), 12);
+        const N = Math.min(Math.max(parseInt(container.querySelector('#board-n').value) || 8, 2), 8);
+        const M = Math.min(Math.max(parseInt(container.querySelector('#board-m').value) || 8, 2), 8);
         const board = container.querySelector('#chess-board');
         
         board.style.gridTemplateColumns = `repeat(${N}, 1fr)`;
@@ -133,10 +133,24 @@ export class ChessGenerator extends BaseGeneratorUI {
         const pType = container.querySelector('#piece-type').value;
         const noAttack = container.querySelector('#cond-attack').checked;
 
-        const totalCells = N * M;
+        if (isNaN(N) || isNaN(M) || isNaN(K)) {
+            alert("Ошибка валидации: Поля не могут быть пустыми.");
+            return;
+        }
+        
+        if (N < 2 || M < 2 || K < 1) {
+            alert("Ошибка валидации: Доска должна быть минимум 2x2. Количество фигур должно быть больше 0.");
+            return;
+        }
 
+        if (N > 8 || M > 8) {
+            alert("Ошибка валидации: Для предотвращения блокировки браузера (DoS) максимальный размер доски ограничен 8x8.");
+            return;
+        }
+
+        const totalCells = N * M;
         if (K > totalCells) {
-            alert(`Ошибка: Нельзя поставить ${K} фигур на доску из ${totalCells} клеток.`);
+            alert(`Ошибка валидации: Нельзя поставить ${K} фигур на доску из ${totalCells} клеток.`);
             return;
         }
 

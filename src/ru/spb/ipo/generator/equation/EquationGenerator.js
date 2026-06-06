@@ -50,7 +50,7 @@ export class EquationGenerator extends BaseGeneratorUI {
                         <div style="display: flex; align-items: center; gap: 25px; flex-wrap: wrap;">
                             <div>
                                 <span style="color: #cbd5e1; margin-right: 10px;">Конечная сумма (S):</span>
-                                <input type="number" id="eq-sum" value="25" min="1" max="100" style="width: 80px; padding: 8px; background: #1e293b; color: white; border: 1px solid #475569; border-radius: 6px; font-family: inherit;">
+                                <input type="number" id="eq-sum" value="25" min="1" max="1000" style="width: 80px; padding: 8px; background: #1e293b; color: white; border: 1px solid #475569; border-radius: 6px; font-family: inherit;">
                             </div>
                             
                             <div>
@@ -71,7 +71,7 @@ export class EquationGenerator extends BaseGeneratorUI {
                             <select id="cond-op" style="padding: 8px; background: #1e293b; color: white; border: 1px solid #475569; border-radius: 6px; font-family: inherit;">
                                 ${Object.entries(this.operators).map(([k, v]) => `<option value="${k}">${v}</option>`).join('')}
                             </select>
-                            <input type="number" id="cond-val" value="2" min="0" style="width: 70px; padding: 8px; background: #1e293b; color: white; border: 1px solid #475569; border-radius: 6px; font-family: inherit;">
+                            <input type="number" id="cond-val" value="2" min="0" max="1000" style="width: 70px; padding: 8px; background: #1e293b; color: white; border: 1px solid #475569; border-radius: 6px; font-family: inherit;">
                             <button id="add-cond-btn" class="btn" style="background: #3b82f6; margin-left: auto;">+ Добавить</button>
                         </div>
 
@@ -95,6 +95,11 @@ export class EquationGenerator extends BaseGeneratorUI {
             const varIndex = parseInt(container.querySelector('#cond-var').value);
             const op = container.querySelector('#cond-op').value;
             const val = parseInt(container.querySelector('#cond-val').value);
+
+            if (isNaN(val) || val < 0 || val > 1000) {
+                alert("Ошибка валидации: Значение ограничения должно быть от 0 до 1000.");
+                return;
+            }
 
             const exists = this.conditions.some(c => c.varIndex === varIndex && c.op === op && c.val === val);
             if (!exists) {
@@ -144,6 +149,16 @@ export class EquationGenerator extends BaseGeneratorUI {
     generateAndSaveTask(container) {
         const S = parseInt(container.querySelector('#eq-sum').value);
         const K = parseInt(container.querySelector('#eq-vars').value);
+        
+        if (isNaN(S) || S < 1 || S > 1000) {
+            alert("Ошибка валидации: Для предотвращения ошибки 'Invalid array length' сумма (S) должна быть от 1 до 1000.");
+            return;
+        }
+
+        if (isNaN(K) || K < 2 || K > 10) {
+            alert("Ошибка валидации: Количество переменных (k) должно быть от 2 до 10.");
+            return;
+        }
         
         const varsStr = Array.from({length: K}, (_, i) => `x<sub>${i+1}</sub>`).join(' + ');
         

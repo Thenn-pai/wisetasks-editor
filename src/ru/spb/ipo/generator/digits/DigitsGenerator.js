@@ -42,7 +42,7 @@ export class DigitsGenerator extends BaseGeneratorUI {
                         <div style="margin-bottom: 20px; padding: 20px; background: rgba(30, 41, 59, 0.4); border: 1px solid #334155; border-radius: 8px;">
                             <div style="display: flex; gap: 20px; align-items: center; margin-bottom: 20px;">
                                 <span style="color: #cbd5e1; font-weight: 600;">Количество цифр в числе (k):</span>
-                                <input type="number" id="dig-count" value="4" min="2" max="8" style="width: 80px; padding: 8px; background: #1e293b; color: white; border: 1px solid #475569; border-radius: 6px; font-family: inherit;">
+                                <input type="number" id="dig-count" value="4" min="2" max="6" style="width: 80px; padding: 8px; background: #1e293b; color: white; border: 1px solid #475569; border-radius: 6px; font-family: inherit;">
                             </div>
 
                             <label style="display:block; margin-bottom: 10px; color: #60a5fa; font-weight: 600;">Правило формирования нового числа:</label>
@@ -130,7 +130,10 @@ export class DigitsGenerator extends BaseGeneratorUI {
     }
 
     renderQuickButtons(container) {
-        const k = parseInt(container.querySelector('#dig-count').value);
+        const rawK = parseInt(container.querySelector('#dig-count').value);
+        const k = isNaN(rawK) ? 4 : Math.min(Math.max(rawK, 2), 6);
+        container.querySelector('#dig-count').value = k;
+        
         const btnsContainer = container.querySelector('#quick-buttons');
         const patternInput = container.querySelector('#dig-pattern');
         btnsContainer.innerHTML = '';
@@ -160,8 +163,18 @@ export class DigitsGenerator extends BaseGeneratorUI {
         const rel = container.querySelector('#dig-relation').value;
         const factor = parseInt(container.querySelector('#dig-factor').value);
 
+        if (isNaN(K) || K < 2 || K > 6) {
+            alert("Ошибка валидации: Для предотвращения зависания браузера длина числа (k) должна быть от 2 до 6.");
+            return;
+        }
+        
+        if (isNaN(factor) || factor < 2) {
+            alert("Ошибка валидации: Множитель должен быть целым числом больше 1.");
+            return;
+        }
+
         if (!pattern) {
-            alert("Ошибка: Задайте комбинацию (правило формирования нового числа).");
+            alert("Ошибка валидации: Задайте комбинацию (правило формирования нового числа).");
             return;
         }
 
@@ -175,12 +188,12 @@ export class DigitsGenerator extends BaseGeneratorUI {
             if (pattern[i] === '[') {
                 const end = pattern.indexOf(']', i);
                 if (end === -1) {
-                    alert("Ошибка: Неверный синтаксис комбинации. Незакрытая скобка [.");
+                    alert("Ошибка валидации: Неверный синтаксис комбинации. Незакрытая скобка [.");
                     return;
                 }
                 const idx = parseInt(pattern.substring(i + 1, end));
                 if (idx > K || idx < 1) {
-                    alert(`Ошибка: Маркер [${idx}] выходит за пределы количества цифр (${K}).`);
+                    alert(`Ошибка валидации: Маркер [${idx}] выходит за пределы количества цифр (${K}).`);
                     return;
                 }
                 instructions.push({ type: 'pos', index: idx - 1 });
@@ -232,11 +245,22 @@ export class DigitsGenerator extends BaseGeneratorUI {
         const modStr = container.querySelector('#mod-divisor').value.trim();
 
         if (!divStr || !/^\d+$/.test(divStr)) {
-            alert("Ошибка: Введите корректное целое число (Делимое).");
+            alert("Ошибка валидации: Введите корректное целое число (Делимое).");
             return;
         }
+        
+        if (divStr.length > 5000) {
+            alert("Ошибка валидации: Длина делимого превышает допустимый предел для браузера (5000 символов).");
+            return;
+        }
+
         if (!modStr || !/^\d+$/.test(modStr) || modStr === '0') {
-            alert("Ошибка: Введите корректный делитель (не 0).");
+            alert("Ошибка валидации: Введите корректный делитель (не 0).");
+            return;
+        }
+        
+        if (modStr.length > 100) {
+            alert("Ошибка валидации: Длина делителя слишком велика.");
             return;
         }
 
@@ -248,7 +272,7 @@ export class DigitsGenerator extends BaseGeneratorUI {
             const R = A % M;
 
             this.saveTask({
-                title: `Остаток от деления: ${divStr} mod ${modStr}`,
+                title: `Остаток от деления: ${divStr.substring(0, 10)}${divStr.length > 10 ? '...' : ''} mod ${modStr}`,
                 descriptionHtml: description,
                 solutionHtml: '',
                 answerText: R.toString(),

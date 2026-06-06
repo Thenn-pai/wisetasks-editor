@@ -99,6 +99,14 @@ export class BasketGenerator extends BaseGeneratorUI {
     attachEvents(container) {
         container.querySelector('#add-urn-btn').onclick = () => {
             const count = parseInt(container.querySelector('#urn-count').value);
+            if (isNaN(count) || count < 1) {
+                alert("Ошибка валидации: Количество добавляемых шаров должно быть положительным числом.");
+                return;
+            }
+            if (count > 50) {
+                 alert("Ошибка валидации: За один раз можно добавить не более 50 шаров одного цвета.");
+                 return;
+            }
             const color = container.querySelector('#urn-color').value;
             this.urn[color] = (this.urn[color] || 0) + count;
             this.renderUrn(container);
@@ -111,6 +119,10 @@ export class BasketGenerator extends BaseGeneratorUI {
 
         container.querySelector('#add-draw-btn').onclick = () => {
             const count = parseInt(container.querySelector('#draw-count').value);
+             if (isNaN(count) || count < 1) {
+                alert("Ошибка валидации: Количество вытаскиваемых шаров должно быть положительным числом.");
+                return;
+            }
             const color = container.querySelector('#draw-color').value;
             this.draw[color] = (this.draw[color] || 0) + count;
             this.renderDraw(container);
@@ -214,6 +226,11 @@ export class BasketGenerator extends BaseGeneratorUI {
                 }
             }
         }
+        
+         if (isSeq && totalDraw > 20) {
+             alert("Ошибка валидации: Для упорядоченной выборки (последовательно) максимальное количество вытаскиваемых шаров ограничено 20, чтобы избежать превышения лимитов вычислений.");
+             return;
+         }
 
         let urnTexts = Object.entries(this.urn).map(([k, v]) => `${v} ${this.colors[k].name.toLowerCase()}х`);
         let description = `В корзине лежит <b>${totalUrn}</b> шаров: ${urnTexts.join(', ')}.<br>`;
