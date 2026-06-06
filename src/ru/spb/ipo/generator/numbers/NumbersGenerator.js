@@ -244,7 +244,7 @@ export class NumbersGenerator extends BaseGeneratorUI {
         btn.style.backgroundColor = '#f59e0b';
         btn.disabled = true;
 
-        const worker = new Worker('./src/ru/spb/ipo/generators/numbers/numberWorker.js');
+        const worker = new Worker('./numberWorker.js');
 
         worker.onmessage = (e) => {
             const exactCount = e.data;
