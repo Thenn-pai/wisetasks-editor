@@ -127,6 +127,9 @@ export class ChessGenerator extends BaseGeneratorUI {
     }
 
     generateAndSaveTask(container) {
+        const btn = container.querySelector('#generate-btn');
+        if (btn.disabled) return;
+
         const N = parseInt(container.querySelector('#board-n').value);
         const M = parseInt(container.querySelector('#board-m').value);
         const K = parseInt(container.querySelector('#piece-k').value);
@@ -144,7 +147,7 @@ export class ChessGenerator extends BaseGeneratorUI {
         }
 
         if (N > 8 || M > 8) {
-            alert("Ошибка валидации: Для предотвращения блокировки браузера (DoS) максимальный размер доски ограничен 8x8.");
+            alert("Ошибка валидации: Для предотвращения блокировки браузера максимальный размер доски ограничен 8x8.");
             return;
         }
 
@@ -216,8 +219,14 @@ export class ChessGenerator extends BaseGeneratorUI {
             return;
         }
 
-        setTimeout(() => {
-            const exactCount = this.calculateChessDFS(N, M, K, pType);
+        btn.textContent = 'Идет расчет...';
+        btn.style.backgroundColor = '#f59e0b';
+        btn.disabled = true;
+
+        const worker = new Worker('./src/ru/spb/ipo/generator/chessWorker.js');
+
+        worker.onmessage = (e) => {
+            const exactCount = e.data;
             
             this.saveTask({
                 title: title,
@@ -226,56 +235,23 @@ export class ChessGenerator extends BaseGeneratorUI {
                 answerText: exactCount.toString(),
                 category: this.pageTitle
             });
+            
+            btn.textContent = 'Создать задачу';
+            btn.style.backgroundColor = '#10b981';
+            btn.disabled = false;
+            
             alert("Задача успешно сгенерирована и добавлена в раздел «Решение задач»!");
-        }, 10);
-    }
-
-    calculateChessDFS(N, M, K, pType) {
-        let count = 0;
-        const totalCells = N * M;
-        const placed = [];
-
-        const isSafe = (x, y) => {
-            for (let i = 0; i < placed.length; i++) {
-                const px = placed[i].x;
-                const py = placed[i].y;
-                const dx = Math.abs(px - x);
-                const dy = Math.abs(py - y);
-
-                if (pType === 'bishop') {
-                    if (dx === dy) return false;
-                } else if (pType === 'knight') {
-                    if ((dx === 2 && dy === 1) || (dx === 1 && dy === 2)) return false;
-                } else if (pType === 'queen') {
-                    if (dx === 0 || dy === 0 || dx === dy) return false;
-                } else if (pType === 'king') {
-                    if (dx <= 1 && dy <= 1) return false;
-                }
-            }
-            return true;
+            worker.terminate();
         };
 
-        const dfs = (startIndex) => {
-            if (placed.length === K) {
-                count++;
-                return;
-            }
-
-            if (totalCells - startIndex < K - placed.length) return;
-
-            for (let i = startIndex; i < totalCells; i++) {
-                const x = i % N;
-                const y = Math.floor(i / N);
-
-                if (isSafe(x, y)) {
-                    placed.push({x, y});
-                    dfs(i + 1);
-                    placed.pop();
-                }
-            }
+        worker.onerror = (error) => {
+            alert("Произошла ошибка при вычислениях в фоновом потоке.");
+            btn.textContent = 'Создать задачу';
+            btn.style.backgroundColor = '#10b981';
+            btn.disabled = false;
+            worker.terminate();
         };
 
-        dfs(0);
-        return count;
+        worker.postMessage({ N, M, K, pType });
     }
 }
