@@ -235,11 +235,6 @@ export class NumbersGenerator extends BaseGeneratorUI {
             return;
         }
 
-        if (Math.pow(M, K) > 5000000) {
-            alert("Ошибка валидации: Комбинаторный взрыв. Количество вариантов слишком велико для расчета алгоритмом поиска. Пожалуйста, уменьшите 'k'.");
-            return;
-        }
-
         btn.textContent = 'Идет расчет...';
         btn.style.backgroundColor = '#f59e0b';
         btn.disabled = true;
