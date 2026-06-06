@@ -146,6 +146,9 @@ export class NumbersGenerator extends BaseGeneratorUI {
     }
 
     generateAndSaveTask(container) {
+        const btn = container.querySelector('#generate-xml-btn');
+        if (btn.disabled) return;
+
         const maxD = parseInt(container.querySelector('#max-digit').value);
         const K = parseInt(container.querySelector('#set-size').value);
         
@@ -220,56 +223,56 @@ export class NumbersGenerator extends BaseGeneratorUI {
             useDFS = true;
         }
 
-        if (useDFS) {
-            if (Math.pow(M, K) > 5000000) {
-                alert("Ошибка валидации: Комбинаторный взрыв. Количество вариантов слишком велико для расчета алгоритмом поиска. Пожалуйста, уменьшите 'k'.");
-                return;
-            }
-            ans = this.calculateDFS(maxD, K);
+        if (!useDFS) {
+            this.saveTask({
+                title: `Числовые наборы: k = ${K}`,
+                descriptionHtml: text,
+                solutionHtml: '',
+                answerText: ans.toString(),
+                category: this.pageTitle
+            });
+            alert("Задача успешно сгенерирована и добавлена в раздел «Решение задач»!");
+            return;
         }
 
-        this.saveTask({
-            title: `Числовые наборы: k = ${K}`,
-            descriptionHtml: text,
-            solutionHtml: '',
-            answerText: ans.toString(),
-            category: this.pageTitle
-        });
+        if (Math.pow(M, K) > 5000000) {
+            alert("Ошибка валидации: Комбинаторный взрыв. Количество вариантов слишком велико для расчета алгоритмом поиска. Пожалуйста, уменьшите 'k'.");
+            return;
+        }
 
-        alert("Задача успешно сгенерирована и добавлена в раздел «Решение задач»!");
-    }
+        btn.textContent = 'Идет расчет...';
+        btn.style.backgroundColor = '#f59e0b';
+        btn.disabled = true;
 
-    calculateDFS(maxD, K) {
-        let count = 0;
-        const noZero = this.firstNotZero;
-        const conds = this.conditions;
+        const worker = new Worker('./src/ru/spb/ipo/generators/numbers/numberWorker.js');
 
-        const dfs = (depth, currentSeq) => {
-            if (depth === K) {
-                count++;
-                return;
-            }
-
-            for (let i = 0; i <= maxD; i++) {
-                if (depth === 0 && noZero && i === 0) continue;
-
-                if (depth > 0) {
-                    const prev = currentSeq[depth - 1];
-                    if (conds.includes('distinct') && currentSeq.includes(i)) continue;
-                    if (conds.includes('adjacent_distinct') && prev === i) continue;
-                    if (conds.includes('descending') && prev <= i) continue;
-                    if (conds.includes('ascending') && prev >= i) continue;
-                    if (conds.includes('non_descending') && prev > i) continue;
-                    if (conds.includes('non_ascending') && prev < i) continue;
-                }
-
-                currentSeq.push(i);
-                dfs(depth + 1, currentSeq);
-                currentSeq.pop();
-            }
+        worker.onmessage = (e) => {
+            const exactCount = e.data;
+            
+            this.saveTask({
+                title: `Числовые наборы: k = ${K}`,
+                descriptionHtml: text,
+                solutionHtml: '',
+                answerText: exactCount.toString(),
+                category: this.pageTitle
+            });
+            
+            btn.textContent = 'Создать задачу';
+            btn.style.backgroundColor = '#10b981';
+            btn.disabled = false;
+            
+            alert("Задача успешно сгенерирована и добавлена в раздел «Решение задач»!");
+            worker.terminate();
         };
 
-        dfs(0, []);
-        return count;
+        worker.onerror = (error) => {
+            alert("Произошла ошибка при вычислениях в фоновом потоке.");
+            btn.textContent = 'Создать задачу';
+            btn.style.backgroundColor = '#10b981';
+            btn.disabled = false;
+            worker.terminate();
+        };
+
+        worker.postMessage({ maxD, K, firstNotZero: this.firstNotZero, conditions: this.conditions });
     }
 }

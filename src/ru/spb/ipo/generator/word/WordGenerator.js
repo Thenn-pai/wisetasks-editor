@@ -7,8 +7,6 @@ export class WordGenerator extends BaseGeneratorUI {
         this.conditions = [];
         this.allowRepeats = true;
         this.pageTitle = 'Слова';
-
-        this.vowels = new Set(['а', 'е', 'ё', 'и', 'о', 'у', 'ы', 'э', 'ю', 'я', 'a', 'e', 'i', 'o', 'u', 'y']);
         
         this.conditionTypes = {
             'palindrome': 'Слово является палиндромом',
@@ -185,11 +183,10 @@ export class WordGenerator extends BaseGeneratorUI {
         });
     }
 
-    isVowel(char) {
-        return this.vowels.has(char);
-    }
-
     generateAndSaveTask(container) {
+        const btn = container.querySelector('#generate-xml-btn');
+        if (btn.disabled) return;
+
         const N = this.alphabet.length;
         const K = parseInt(container.querySelector('#word-k').value);
 
@@ -240,97 +237,39 @@ export class WordGenerator extends BaseGeneratorUI {
             return;
         }
 
-        const exactCount = this.calculateWords(K);
+        btn.textContent = 'Идет расчет...';
+        btn.style.backgroundColor = '#f59e0b';
+        btn.disabled = true;
 
-        this.saveTask({
-            title: `Слова: k = ${K}`,
-            descriptionHtml: text,
-            solutionHtml: '',
-            answerText: exactCount.toString(),
-            category: this.pageTitle
-        });
-        alert("Задача успешно сгенерирована и добавлена в раздел «Решение задач»!");
-    }
+        const worker = new Worker('./src/ru/spb/ipo/generators/word/wordWorker.js');
 
-    calculateWords(K) {
-        let count = 0;
-        const n = this.alphabet.length;
-        const used = new Array(n).fill(false);
-        const currentWord = [];
-
-        const dfs = (depth) => {
-            if (depth === K) {
-                if (this.checkFinalConditions(currentWord)) {
-                    count++;
-                }
-                return;
-            }
-
-            for (let i = 0; i < n; i++) {
-                if (!this.allowRepeats && used[i]) continue;
-                
-                const char = this.alphabet[i];
-                currentWord.push(char);
-                used[i] = true;
-
-                if (this.checkPrefixConditions(currentWord)) {
-                    dfs(depth + 1);
-                }
-
-                currentWord.pop();
-                used[i] = false;
-            }
+        worker.onmessage = (e) => {
+            const exactCount = e.data;
+            
+            this.saveTask({
+                title: `Слова: k = ${K}`,
+                descriptionHtml: text,
+                solutionHtml: '',
+                answerText: exactCount.toString(),
+                category: this.pageTitle
+            });
+            
+            btn.textContent = 'Создать задачу';
+            btn.style.backgroundColor = '#10b981';
+            btn.disabled = false;
+            
+            alert("Задача успешно сгенерирована и добавлена в раздел «Решение задач»!");
+            worker.terminate();
         };
 
-        dfs(0);
-        return count;
-    }
+        worker.onerror = (error) => {
+            alert("Произошла ошибка при вычислениях в фоновом потоке.");
+            btn.textContent = 'Создать задачу';
+            btn.style.backgroundColor = '#10b981';
+            btn.disabled = false;
+            worker.terminate();
+        };
 
-    checkPrefixConditions(word) {
-        const len = word.length;
-        if (len < 2) return true;
-
-        const prev = word[len - 2];
-        const curr = word[len - 1];
-        const prevIsV = this.isVowel(prev);
-        const currIsV = this.isVowel(curr);
-
-        if (this.conditions.includes('alternate')) {
-            if (prevIsV === currIsV) return false;
-        }
-        if (this.conditions.includes('after_c_is_v')) {
-            if (!prevIsV && !currIsV) return false;
-        }
-        if (this.conditions.includes('after_v_is_c')) {
-            if (prevIsV && currIsV) return false;
-        }
-        return true;
-    }
-
-    checkFinalConditions(word) {
-        if (this.conditions.includes('palindrome')) {
-            let left = 0;
-            let right = word.length - 1;
-            while (left < right) {
-                if (word[left] !== word[right]) return false;
-                left++; right--;
-            }
-        }
-
-        const counts = this.conditions.some(c => c.startsWith('c_')) ? this.countVowelsConsonants(word) : null;
-        
-        if (this.conditions.includes('c_less_v') && counts.c >= counts.v) return false;
-        if (this.conditions.includes('c_more_v') && counts.c <= counts.v) return false;
-        if (this.conditions.includes('c_eq_v') && counts.c !== counts.v) return false;
-
-        return true;
-    }
-
-    countVowelsConsonants(word) {
-        let v = 0; let c = 0;
-        for (let char of word) {
-            if (this.isVowel(char)) v++; else c++;
-        }
-        return { v, c };
+        worker.postMessage({ K, alphabet: this.alphabet, allowRepeats: this.allowRepeats, conditions: this.conditions });
     }
 }
