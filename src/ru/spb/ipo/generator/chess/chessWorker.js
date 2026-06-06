@@ -18,7 +18,7 @@ self.onmessage = function(e) {
             } else if (pType === 'queen') {
                 if (dx === 0 || dy === 0 || dx === dy) return false;
             } else if (pType === 'king') {
-                if (dx <= 1 && dy <= 1) return false;
+                if (Math.max(dx, dy) === 1) return false;
             }
         }
         return true;
