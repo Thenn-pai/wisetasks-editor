@@ -1,4 +1,5 @@
 import { BaseGeneratorUI } from '../base/ui/BaseGeneratorUI.js';
+import { MathUtils } from '../mathUtils.js';
 
 export class EquationGenerator extends BaseGeneratorUI {
     constructor() {
@@ -12,18 +13,6 @@ export class EquationGenerator extends BaseGeneratorUI {
             '<': '<',
             '>': '>'
         };
-    }
-
-    fact(n) {
-        if (n <= 1) return 1;
-        let res = 1;
-        for (let i = 2; i <= n; i++) res *= i;
-        return res;
-    }
-
-    combinations(n, k) {
-        if (k < 0 || k > n) return 0;
-        return Math.round(this.fact(n) / (this.fact(k) * this.fact(n - k)));
     }
 
     renderUI(container) {
@@ -174,7 +163,7 @@ export class EquationGenerator extends BaseGeneratorUI {
         }
 
         if (this.conditions.length === 0) {
-            const baseWays = this.combinations(S + K - 1, K - 1);
+            const baseWays = MathUtils.combinations(S + K - 1, K - 1);
             
             this.saveTask({
                 title: `Уравнение: S = ${S}, k = ${K}`,
@@ -222,15 +211,15 @@ export class EquationGenerator extends BaseGeneratorUI {
     }
 
     calculateDP(S, K, domains) {
-        let dp = new Array(S + 1).fill(0);
-        dp[0] = 1;
+        let dp = new Array(S + 1).fill(0n);
+        dp[0] = 1n;
 
         for (let i = 0; i < K; i++) {
-            let nextDp = new Array(S + 1).fill(0);
+            let nextDp = new Array(S + 1).fill(0n);
             let d = domains[i];
             
             for (let currSum = 0; currSum <= S; currSum++) {
-                if (dp[currSum] > 0) {
+                if (dp[currSum] > 0n) {
                     for (let val = d.min; val <= d.max; val++) {
                         if (currSum + val <= S) {
                             nextDp[currSum + val] += dp[currSum];
