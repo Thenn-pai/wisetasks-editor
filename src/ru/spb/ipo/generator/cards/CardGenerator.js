@@ -1,4 +1,5 @@
 import { BaseGeneratorUI } from '../base/ui/BaseGeneratorUI.js';
+import { MathUtils } from '../mathUtils.js';
 
 export class CardGenerator extends BaseGeneratorUI {
     constructor() {
@@ -20,18 +21,6 @@ export class CardGenerator extends BaseGeneratorUI {
             { id: '9', label: '9' }, { id: '10', label: '10' }, { id: 'valet', label: 'В' },
             { id: 'dama', label: 'Д' }, { id: 'korol', label: 'К' }, { id: 'tuz', label: 'Т' }
         ];
-    }
-
-    fact(n) {
-        if (n <= 1) return 1;
-        let res = 1;
-        for (let i = 2; i <= n; i++) res *= i;
-        return res;
-    }
-
-    combinations(n, k) {
-        if (k < 0 || k > n) return 0;
-        return Math.round(this.fact(n) / (this.fact(k) * this.fact(n - k)));
     }
 
     renderUI(container) {
@@ -270,14 +259,14 @@ export class CardGenerator extends BaseGeneratorUI {
                 title: this.currentTitle,
                 descriptionHtml: this.currentDescription,
                 solutionHtml: '',
-                answerText: `${this.combinations(N, K)}`,
+                answerText: MathUtils.combinations(N, K).toString(),
                 category: this.pageTitle
             });
             alert("Задача успешно сгенерирована и добавлена в раздел «Решение задач»!");
             return;
         }
 
-        if (this.combinations(N, K) > 5000000) {
+        if (MathUtils.combinations(N, K) > 5000000n) {
             alert("Ошибка валидации: Комбинаторный взрыв. Количество вариантов слишком велико для расчета с условиями. Пожалуйста, уменьшите 'k' или размер колоды.");
             return;
         }
