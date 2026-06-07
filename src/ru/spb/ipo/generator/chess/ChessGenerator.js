@@ -1,4 +1,5 @@
 import { BaseGeneratorUI } from '../base/ui/BaseGeneratorUI.js';
+import { MathUtils } from '../mathUtils.js';
 
 export class ChessGenerator extends BaseGeneratorUI {
     constructor() {
@@ -12,18 +13,6 @@ export class ChessGenerator extends BaseGeneratorUI {
             'queen': { name: 'Ферзь', symbol: '♛', color: '#f59e0b' },
             'king': { name: 'Король', symbol: '♚', color: '#10b981' }
         };
-    }
-
-    fact(n) {
-        if (n <= 1) return 1;
-        let res = 1;
-        for (let i = 2; i <= n; i++) res *= i;
-        return res;
-    }
-
-    combinations(n, k) {
-        if (k < 0 || k > n) return 0;
-        return Math.round(this.fact(n) / (this.fact(k) * this.fact(n - k)));
     }
 
     renderUI(container) {
@@ -177,7 +166,7 @@ export class ChessGenerator extends BaseGeneratorUI {
         }
 
         if (!noAttack || pType === 'any') {
-            const ways = this.combinations(totalCells, K);
+            const ways = MathUtils.combinations(totalCells, K);
             
             this.saveTask({
                 title: title,
@@ -203,9 +192,10 @@ export class ChessGenerator extends BaseGeneratorUI {
                 return;
             }
 
-            const chooseCols = this.combinations(N, K);
-            const chooseRows = this.combinations(M, K);
-            const permutations = this.fact(K);
+            const chooseCols = MathUtils.combinations(N, K);
+            const chooseRows = MathUtils.combinations(M, K);
+            const permutations = MathUtils.fact(K);
+            
             const totalWays = chooseCols * chooseRows * permutations;
             
             this.saveTask({
@@ -223,7 +213,7 @@ export class ChessGenerator extends BaseGeneratorUI {
         btn.style.backgroundColor = '#f59e0b';
         btn.disabled = true;
 
-        const worker = new Worker('./src/ru/spb/ipo/generator/chess/chessWorker.js');
+        const worker = new Worker(new URL('./chessWorker.js', import.meta.url));
 
         worker.onmessage = (e) => {
             const exactCount = e.data;
