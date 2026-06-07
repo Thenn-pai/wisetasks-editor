@@ -1,4 +1,5 @@
 import { BaseGeneratorUI } from '../base/ui/BaseGeneratorUI.js';
+import { MathUtils } from '../mathUtils.js';
 
 export class BasketGenerator extends BaseGeneratorUI {
     constructor() {
@@ -17,16 +18,25 @@ export class BasketGenerator extends BaseGeneratorUI {
         };
     }
 
-    fact(n) {
-        if (n <= 1) return 1;
-        let res = 1;
-        for (let i = 2; i <= n; i++) res *= i;
-        return res;
-    }
+    getDeclension(number, colorKey) {
+        const lastDigit = number % 10;
+        const lastTwoDigits = number % 100;
+        const baseColors = {
+            'white': ['белый', 'белых', 'белых'],
+            'black': ['черный', 'черных', 'черных'],
+            'red': ['красный', 'красных', 'красных'],
+            'blue': ['синий', 'синих', 'синих'],
+            'green': ['зеленый', 'зеленых', 'зеленых'],
+            'yellow': ['желтый', 'желтых', 'желтых']
+        };
+        
+        const words = baseColors[colorKey];
+        if (!words) return `${number} шт.`;
 
-    combinations(n, k) {
-        if (k < 0 || k > n) return 0;
-        return Math.round(this.fact(n) / (this.fact(k) * this.fact(n - k)));
+        if (lastTwoDigits >= 11 && lastTwoDigits <= 19) return `${number} ${words[2]}`;
+        if (lastDigit === 1) return `${number} ${words[0]}`;
+        if (lastDigit >= 2 && lastDigit <= 4) return `${number} ${words[1]}`;
+        return `${number} ${words[2]}`;
     }
 
     renderUI(container) {
@@ -179,7 +189,7 @@ export class BasketGenerator extends BaseGeneratorUI {
             tag.style.border = '1px solid #475569';
             tag.style.borderRadius = '6px';
             
-            let nameStr = colorKey === 'any' ? 'Любых шаров' : `Шаров цвета «${this.colors[colorKey].name}»`;
+            let nameStr = colorKey === 'any' ? 'любых' : `шаров цвета «${this.colors[colorKey].name}»`;
             let colorDot = colorKey === 'any' ? '⚪' : `<div style="display:inline-block; width: 12px; height: 12px; border-radius: 50%; background: ${this.colors[colorKey].hex}; border: 1px solid ${this.colors[colorKey].border}; margin-right: 5px;"></div>`;
 
             tag.innerHTML = `
@@ -232,11 +242,11 @@ export class BasketGenerator extends BaseGeneratorUI {
              return;
          }
 
-        let urnTexts = Object.entries(this.urn).map(([k, v]) => `${v} ${this.colors[k].name.toLowerCase()}х`);
+        let urnTexts = Object.entries(this.urn).map(([k, v]) => this.getDeclension(v, k));
         let description = `В корзине лежит <b>${totalUrn}</b> шаров: ${urnTexts.join(', ')}.<br>`;
         
         let drawTexts = Object.entries(this.draw).map(([k, v]) => {
-            return k === 'any' ? `${v} любых` : `${v} ${this.colors[k].name.toLowerCase()}х`;
+            return k === 'any' ? `${v} любых` : this.getDeclension(v, k);
         });
 
         description += `Из корзины ${isSeq ? '<b>последовательно</b>' : '<b>одновременно</b>'} вытаскивают ${totalDraw} шаров.<br>`;
@@ -247,13 +257,13 @@ export class BasketGenerator extends BaseGeneratorUI {
             description += `Подсчитайте количество всех возможных исходов выборки.`;
         }
 
-        let totalWays = 1;
+        let totalWays = 1n;
         let drawnSpecific = 0;
 
         for (const [color, reqCount] of Object.entries(this.draw)) {
             if (color !== 'any') {
                 const avail = this.urn[color];
-                totalWays *= this.combinations(avail, reqCount);
+                totalWays *= MathUtils.combinations(avail, reqCount);
                 drawnSpecific += reqCount;
             }
         }
@@ -261,11 +271,11 @@ export class BasketGenerator extends BaseGeneratorUI {
         const needAny = this.draw['any'] || 0;
         if (needAny > 0) {
             const availAny = totalUrn - drawnSpecific;
-            totalWays *= this.combinations(availAny, needAny);
+            totalWays *= MathUtils.combinations(availAny, needAny);
         }
 
         if (isSeq) {
-            totalWays *= this.fact(totalDraw);
+            totalWays *= MathUtils.fact(totalDraw);
         }
 
         this.saveTask({
