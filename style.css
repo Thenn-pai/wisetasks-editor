@@ -71,3 +71,118 @@ body {
 ::-webkit-scrollbar-track { background: rgba(0,0,0,0.1); }
 ::-webkit-scrollbar-thumb { background: #4a627a; border-radius: 4px; }
 ::-webkit-scrollbar-thumb:hover { background: #64b5f6; }
+
+
+@media (max-width: 850px) {
+
+    .header {
+        flex-direction: column;
+        gap: 15px;
+        padding: 15px;
+        text-align: center;
+    }
+
+    #generator-select {
+        width: 100%;
+        max-width: 100%;
+    }
+
+    .workspace {
+        padding: 15px;
+    }
+
+
+    #properties-panel > div {
+        flex-direction: column !important;
+        gap: 15px !important;
+    }
+
+
+    #properties-panel > div > div:first-child {
+        width: 100% !important;
+        position: relative !important; 
+        top: 0 !important;
+    }
+
+
+    #properties-panel input[type="text"],
+    #properties-panel input[type="number"],
+    #properties-panel select {
+        flex: 1 !important;
+        min-width: 100px;
+    }
+
+
+    div[style*="grid-template-columns"] {
+        grid-template-columns: repeat(4, 1fr) !important;
+    }
+}
+
+
+@media (max-width: 480px) {
+
+    div[style*="grid-template-columns"] {
+        grid-template-columns: repeat(3, 1fr) !important;
+    }
+    
+
+    .header h1 {
+        font-size: 1.2rem;
+    }
+}
+
+@media (max-width: 850px) {
+
+    .header {
+        flex-direction: column;
+        gap: 15px;
+        padding: 15px;
+        text-align: center;
+    }
+
+    #generator-select {
+        width: 100%;
+        max-width: 100%;
+    }
+
+    .workspace {
+        padding: 15px;
+    }
+
+    #properties-panel > div {
+        flex-direction: column !important;
+        gap: 15px !important;
+    }
+
+    #properties-panel > div > div:first-child {
+        width: 100% !important;
+        position: relative !important; 
+        top: 0 !important;
+    }
+
+
+    #properties-panel input[type="text"],
+    #properties-panel input[type="number"],
+    #properties-panel select {
+        flex: 1 !important;
+        min-width: 100px;
+    }
+
+
+    div[style*="grid-template-columns"] {
+        grid-template-columns: repeat(4, 1fr) !important;
+    }
+}
+
+
+@media (max-width: 480px) {
+    /* Тренажер: 3 кнопки в ряд */
+    div[style*="grid-template-columns"] {
+        grid-template-columns: repeat(3, 1fr) !important;
+    }
+    
+
+    .header h1 {
+        font-size: 1.2rem;
+    }
+}
