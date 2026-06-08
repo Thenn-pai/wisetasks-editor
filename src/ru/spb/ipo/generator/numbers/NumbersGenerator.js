@@ -1,4 +1,5 @@
 import { BaseGeneratorUI } from '../base/ui/BaseGeneratorUI.js';
+import { MathUtils } from '../mathUtils.js';
 
 export class NumbersGenerator extends BaseGeneratorUI {
     constructor() {
@@ -15,18 +16,6 @@ export class NumbersGenerator extends BaseGeneratorUI {
             'non_descending': 'Цифры набора идут в неубывающем порядке',
             'non_ascending': 'Цифры набора идут в невозрастающем порядке'
         };
-    }
-
-    fact(n) {
-        if (n <= 1) return 1;
-        let res = 1;
-        for (let i = 2; i <= n; i++) res *= i;
-        return res;
-    }
-
-    combinations(n, k) {
-        if (k < 0 || k > n) return 0;
-        return Math.round(this.fact(n) / (this.fact(k) * this.fact(n - k)));
     }
 
     renderUI(container) {
@@ -174,13 +163,17 @@ export class NumbersGenerator extends BaseGeneratorUI {
             text += `<br>Дополнительные условия: <i>${reqs.join('; ')}</i>.`;
         }
 
-        let ans = 0;
+        let ans = 0n;
         let useDFS = false;
+        
+        const mB = BigInt(M);
+        const kB = BigInt(K);
 
         if (this.conditions.length === 0) {
-            ans = Math.pow(M, K);
             if (this.firstNotZero) {
-                ans = (M - 1) * Math.pow(M, K - 1);
+                ans = (mB - 1n) * (mB ** (kB - 1n));
+            } else {
+                ans = mB ** kB;
             }
         } else if (this.conditions.length === 1) {
             const cond = this.conditions[0];
@@ -188,32 +181,32 @@ export class NumbersGenerator extends BaseGeneratorUI {
             if (cond === 'distinct') {
                 if (K <= M) {
                     if (this.firstNotZero) {
-                        ans = (M - 1) * (this.fact(M - 1) / this.fact((M - 1) - (K - 1)));
+                        ans = (mB - 1n) * MathUtils.permutations(M - 1, K - 1);
                     } else {
-                        ans = this.fact(M) / this.fact(M - K);
+                        ans = MathUtils.permutations(M, K);
                     }
                 }
             } 
             else if (cond === 'adjacent_distinct') {
                 if (this.firstNotZero) {
-                    ans = (M - 1) * Math.pow(M - 1, K - 1);
+                    ans = (mB - 1n) * ((mB - 1n) ** (kB - 1n));
                 } else {
-                    ans = M * Math.pow(M - 1, K - 1);
+                    ans = mB * ((mB - 1n) ** (kB - 1n));
                 }
             }
             else if (cond === 'ascending') {
                 if (K <= M) {
                     if (this.firstNotZero) {
-                        ans = this.combinations(M - 1, K);
+                        ans = MathUtils.combinations(M - 1, K);
                     } else {
-                        ans = this.combinations(M, K);
+                        ans = MathUtils.combinations(M, K);
                     }
                 }
             }
             else if (cond === 'descending') {
                 if (K <= M) {
-                    ans = this.combinations(M, K);
-                    if (this.firstNotZero && K === 1) ans -= 1;
+                    ans = MathUtils.combinations(M, K);
+                    if (this.firstNotZero && K === 1) ans -= 1n;
                 }
             }
             else {
@@ -232,6 +225,11 @@ export class NumbersGenerator extends BaseGeneratorUI {
                 category: this.pageTitle
             });
             alert("Задача успешно сгенерирована и добавлена в раздел «Решение задач»!");
+            return;
+        }
+
+        if (Math.pow(M, K) > 5000000) {
+            alert("Ошибка валидации: Комбинаторный взрыв. Количество вариантов слишком велико для расчета алгоритмом поиска. Пожалуйста, уменьшите 'k'.");
             return;
         }
 
