@@ -1,4 +1,5 @@
 import { BaseGeneratorUI } from '../base/ui/BaseGeneratorUI.js';
+import { MathUtils } from '../mathUtils.js';
 
 export class WordGenerator extends BaseGeneratorUI {
     constructor() {
@@ -17,13 +18,6 @@ export class WordGenerator extends BaseGeneratorUI {
             'c_more_v': 'Согласных больше гласных',
             'c_eq_v': 'Согласных столько же сколько гласных'
         };
-    }
-
-    fact(n) {
-        if (n <= 1) return 1;
-        let res = 1;
-        for (let i = 2; i <= n; i++) res *= i;
-        return res;
     }
 
     renderUI(container) {
@@ -217,22 +211,21 @@ export class WordGenerator extends BaseGeneratorUI {
             text += `.`;
         }
 
+        let totalCombinations = this.allowRepeats ? (BigInt(N) ** BigInt(K)) : MathUtils.permutations(N, K);
+
         if (this.conditions.length === 0) {
-            let baseWays = this.allowRepeats ? Math.pow(N, K) : (this.fact(N) / this.fact(N - K));
             this.saveTask({
                 title: `Слова: k = ${K}`,
                 descriptionHtml: text,
                 solutionHtml: '',
-                answerText: baseWays.toString(),
+                answerText: totalCombinations.toString(),
                 category: this.pageTitle
             });
             alert("Задача успешно сгенерирована и добавлена в раздел «Решение задач»!");
             return;
         }
 
-        let totalCombinations = this.allowRepeats ? Math.pow(N, K) : (this.fact(N) / this.fact(N - K));
-        
-        if (totalCombinations > 5000000) {
+        if (totalCombinations > 5000000n) {
             alert("Ошибка валидации: Комбинаторный взрыв. Количество вариантов (более 5 млн) слишком велико для расчета алгоритмом поиска. Пожалуйста, уменьшите 'k' или размер алфавита.");
             return;
         }
