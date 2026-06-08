@@ -2,6 +2,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const propertiesPanel = document.getElementById('properties-panel');
     const generatorSelect = document.getElementById('generator-select');
 
+    let currentGeneratorInstance = null;
+
     window.taskStore = {
         tasks: JSON.parse(localStorage.getItem('wisetasks_tasks') || '[]'),
         save() {
@@ -30,6 +32,13 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     async function loadGenerator(selectedTask) {
+        if (currentGeneratorInstance) {
+            if (typeof currentGeneratorInstance.destroy === 'function') {
+                currentGeneratorInstance.destroy();
+            }
+            currentGeneratorInstance = null;
+        }
+
         propertiesPanel.innerHTML = '<p style="text-align: center; color: #888; margin-top: 50px;">Загрузка модуля...</p>';
         
         let modulePath = ''; 
@@ -65,6 +74,8 @@ document.addEventListener('DOMContentLoaded', () => {
             if (modulePath) {
                 const module = await import(modulePath);
                 const generatorInstance = new module[className]();
+                
+                currentGeneratorInstance = generatorInstance;
                 
                 if (generatorInstance.renderUI) {
                     generatorInstance.renderUI(propertiesPanel);
