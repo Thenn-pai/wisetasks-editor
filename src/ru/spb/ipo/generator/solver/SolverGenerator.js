@@ -1,25 +1,9 @@
 import { BaseGeneratorUI } from '../base/ui/BaseGeneratorUI.js';
+import { MathUtils } from '../mathUtils.js';
 
 export class SolverGenerator extends BaseGeneratorUI {
     constructor() {
         super();
-    }
-
-    fact(n) {
-        if (n <= 1) return 1;
-        let res = 1;
-        for (let i = 2; i <= n; i++) res *= i;
-        return res;
-    }
-
-    combinations(n, k) {
-        if (k < 0 || k > n) return 0;
-        return Math.round(this.fact(n) / (this.fact(k) * this.fact(n - k)));
-    }
-
-    permutations(n, k) {
-        if (k < 0 || k > n) return 0;
-        return Math.round(this.fact(n) / this.fact(n - k));
     }
 
     evaluateUserAnswer(input) {
@@ -27,18 +11,18 @@ export class SolverGenerator extends BaseGeneratorUI {
             let expr = input.replace(/\s+/g, '').toLowerCase();
             
             expr = expr.replace(/[cс]\((\d+),(\d+)\)/g, (match, n, k) => {
-                return this.combinations(parseInt(n, 10), parseInt(k, 10)).toString();
+                return MathUtils.combinations(parseInt(n, 10), parseInt(k, 10)).toString();
             });
 
             expr = expr.replace(/[aа]\((\d+),(\d+)\)/g, (match, n, k) => {
-                return this.permutations(parseInt(n, 10), parseInt(k, 10)).toString();
+                return MathUtils.permutations(parseInt(n, 10), parseInt(k, 10)).toString();
             });
 
             const tokens = [];
             let numberBuffer = [];
             for (let i = 0; i < expr.length; i++) {
                 const char = expr[i];
-                if (/\d/.test(char) || char === '.') {
+                if (/\d/.test(char)) {
                     numberBuffer.push(char);
                 } else {
                     if (numberBuffer.length > 0) {
@@ -57,8 +41,8 @@ export class SolverGenerator extends BaseGeneratorUI {
             const operatorStack = [];
 
             for (const token of tokens) {
-                if (!isNaN(parseFloat(token))) {
-                    outputQueue.push(parseFloat(token));
+                if (/^\d+$/.test(token)) {
+                    outputQueue.push(BigInt(token));
                 } else if (token === '!') {
                     outputQueue.push(token);
                 } else if (token === '(') {
@@ -88,12 +72,12 @@ export class SolverGenerator extends BaseGeneratorUI {
 
             const evalStack = [];
             for (const token of outputQueue) {
-                if (!isNaN(parseFloat(token))) {
-                    evalStack.push(parseFloat(token));
+                if (typeof token === 'bigint') {
+                    evalStack.push(token);
                 } else if (token === '!') {
                     if (evalStack.length < 1) return null;
                     const a = evalStack.pop();
-                    evalStack.push(this.fact(a));
+                    evalStack.push(MathUtils.fact(a));
                 } else {
                     if (evalStack.length < 2) return null;
                     const b = evalStack.pop();
@@ -104,7 +88,7 @@ export class SolverGenerator extends BaseGeneratorUI {
                         case '-': evalStack.push(a - b); break;
                         case '*': evalStack.push(a * b); break;
                         case '/': evalStack.push(a / b); break;
-                        case '^': evalStack.push(Math.pow(a, b)); break;
+                        case '^': evalStack.push(a ** b); break;
                     }
                 }
             }
@@ -331,14 +315,23 @@ export class SolverGenerator extends BaseGeneratorUI {
         
         let isMatch = false;
 
-        if (expectedNorm === actualNorm || (expectedNorm.match(/\d+/)?.[0] && actualNorm.match(/\d+/)?.[0] && expectedNorm.match(/\d+/)[0] === actualNorm.match(/\d+/)[0])) {
+        // Если это массив решений через запятую или совпадает строка
+        if (expectedNorm === actualNorm) {
             isMatch = true;
         } else {
+            // Пробуем вычислить через парсер BigInt
             const userValue = this.evaluateUserAnswer(userAnswer);
-            const expectedValue = parseFloat(expectedText);
-
-            if (userValue !== null && !isNaN(expectedValue) && Math.round(userValue) === Math.round(expectedValue)) {
-                isMatch = true;
+            try {
+                // Извлекаем только цифры для точного сравнения (на случай, если есть буквы или пробелы)
+                const expectedBigIntStr = expectedText.replace(/\D/g, '');
+                if (expectedBigIntStr.length > 0) {
+                    const expectedValue = BigInt(expectedBigIntStr);
+                    if (userValue !== null && userValue === expectedValue) {
+                        isMatch = true;
+                    }
+                }
+            } catch (e) {
+                // Не смогли запарсить ожидаемый ответ как BigInt - оставляем isMatch = false
             }
         }
 
