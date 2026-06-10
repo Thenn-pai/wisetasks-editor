@@ -71,7 +71,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 className = 'SolverGenerator';
             } else if (selectedTask === 'students') {
                 modulePath = './src/ru/spb/ipo/generator/students/StudentRolesGenerator.js';
-                сlassName = 'StudentRolesGenerator';
+                className = 'StudentRolesGenerator';
             } 
             
 
