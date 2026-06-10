@@ -69,7 +69,11 @@ document.addEventListener('DOMContentLoaded', () => {
             } else if (selectedTask === 'solver') {
                 modulePath = './src/ru/spb/ipo/generator/solver/SolverGenerator.js';
                 className = 'SolverGenerator';
-            }
+            } else if (selectedTask === 'students') {
+                modulePath = './src/ru/spb/ipo/generator/students/StudentRolesGenerator.js';
+                сlassName = 'StudentRolesGenerator';
+            } 
+            
 
             if (modulePath) {
                 const module = await import(modulePath);
